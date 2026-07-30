@@ -10,6 +10,25 @@ $environmentPath = Join-Path $repositoryRoot ".env"
 $backupPath = Join-Path $repositoryRoot ".env.backup"
 $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
 
+function Read-HiddenSecureValue {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Prompt
+    )
+
+    Write-Host "$Prompt`: " -NoNewline
+    $rawUi = $Host.UI.RawUI
+    $originalForeground = $rawUi.ForegroundColor
+    try {
+        $rawUi.ForegroundColor = $rawUi.BackgroundColor
+        return Read-Host -AsSecureString
+    }
+    finally {
+        $rawUi.ForegroundColor = $originalForeground
+        Write-Host ""
+    }
+}
+
 function ConvertFrom-SecureValue {
     param(
         [Parameter(Mandatory)]
@@ -81,8 +100,9 @@ $deepseekPlain = $null
 $lines = $null
 
 try {
-    $bailianSecure = Read-Host "Enter BAILIAN_API_KEY" -AsSecureString
-    $deepseekSecure = Read-Host "Enter DEEPSEEK_API_KEY" -AsSecureString
+    $bailianSecure = Read-HiddenSecureValue -Prompt "Enter BAILIAN_API_KEY"
+    $deepseekSecure = Read-HiddenSecureValue -Prompt "Enter DEEPSEEK_API_KEY"
+    Clear-Host
 
     $lines = [IO.File]::ReadAllLines($examplePath, $utf8WithoutBom)
     $lines = Set-EnvironmentValue -Lines $lines -Name "AI_MODE" -Value "real"
