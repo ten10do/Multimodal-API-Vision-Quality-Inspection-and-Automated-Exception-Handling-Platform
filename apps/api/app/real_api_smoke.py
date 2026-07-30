@@ -1,5 +1,7 @@
 import asyncio
+import re
 from io import BytesIO
+from time import perf_counter
 
 from PIL import Image
 
@@ -9,10 +11,13 @@ from app.providers import get_reasoning_provider, get_vision_provider
 from app.providers.base import ProviderError
 from app.schemas import (
     AnalysisRequest,
+    AnalysisResult,
     Defect,
     InspectionContext,
     VisionInspectionResult,
 )
+
+SAFE_LABEL = re.compile(r"[^A-Za-z0-9_.:/-]")
 
 
 def minimal_image() -> bytes:
@@ -21,11 +26,41 @@ def minimal_image() -> bytes:
     return buffer.getvalue()
 
 
+def safe_label(value: str, fallback: str) -> str:
+    normalized = SAFE_LABEL.sub("_", value.strip())[:120]
+    return normalized or fallback
+
+
+def report_result(
+    *,
+    provider: str,
+    model: str,
+    started_at: float,
+    status: str,
+    error_type: str,
+) -> None:
+    elapsed_ms = (perf_counter() - started_at) * 1000
+    print(
+        f"provider={provider} "
+        f"model={safe_label(model, 'not-configured')} "
+        f"elapsed_ms={elapsed_ms:.0f} "
+        f"status={status} "
+        f"error_type={safe_label(error_type, 'none')}"
+    )
+
+
 async def smoke_bailian() -> bool:
     settings = get_settings()
+    started_at = perf_counter()
     missing = settings.missing_bailian_config()
     if missing:
-        print(f"Bailian: configuration_error ({', '.join(missing)})")
+        report_result(
+            provider="Bailian",
+            model=settings.bailian_model,
+            started_at=started_at,
+            status="error",
+            error_type="configuration_error",
+        )
         return False
     context = InspectionContext(
         product_code="SMOKE-PRODUCT",
@@ -35,24 +70,47 @@ async def smoke_bailian() -> bool:
     )
     try:
         result = await get_vision_provider(settings).inspect(minimal_image(), context)
-        print(
-            "Bailian: success "
-            f"(defective={result.is_defective}, confidence={result.overall_confidence:.2f})"
+        VisionInspectionResult.model_validate(result.model_dump(mode="json"))
+        report_result(
+            provider="Bailian",
+            model=settings.bailian_model,
+            started_at=started_at,
+            status="success",
+            error_type="none",
         )
         return True
     except ProviderError as exc:
-        print(f"Bailian: provider_error ({exc.code})")
+        report_result(
+            provider="Bailian",
+            model=settings.bailian_model,
+            started_at=started_at,
+            status="error",
+            error_type=exc.code,
+        )
         return False
     except Exception as exc:
-        print(f"Bailian: {type(exc).__name__}")
+        report_result(
+            provider="Bailian",
+            model=settings.bailian_model,
+            started_at=started_at,
+            status="error",
+            error_type=type(exc).__name__,
+        )
         return False
 
 
 async def smoke_deepseek() -> bool:
     settings = get_settings()
+    started_at = perf_counter()
     missing = settings.missing_deepseek_config()
     if missing:
-        print(f"DeepSeek: configuration_error ({', '.join(missing)})")
+        report_result(
+            provider="DeepSeek",
+            model=settings.deepseek_model,
+            started_at=started_at,
+            status="error",
+            error_type="configuration_error",
+        )
         return False
     context = InspectionContext(
         product_code="SMOKE-PRODUCT",
@@ -77,16 +135,32 @@ async def smoke_deepseek() -> bool:
         result = await get_reasoning_provider(settings).analyze(
             AnalysisRequest(vision_result=vision, context=context)
         )
-        print(
-            "DeepSeek: success "
-            f"(risk={result.risk_level.value}, disposition={result.disposition.value})"
+        AnalysisResult.model_validate(result.model_dump(mode="json"))
+        report_result(
+            provider="DeepSeek",
+            model=settings.deepseek_model,
+            started_at=started_at,
+            status="success",
+            error_type="none",
         )
         return True
     except ProviderError as exc:
-        print(f"DeepSeek: provider_error ({exc.code})")
+        report_result(
+            provider="DeepSeek",
+            model=settings.deepseek_model,
+            started_at=started_at,
+            status="error",
+            error_type=exc.code,
+        )
         return False
     except Exception as exc:
-        print(f"DeepSeek: {type(exc).__name__}")
+        report_result(
+            provider="DeepSeek",
+            model=settings.deepseek_model,
+            started_at=started_at,
+            status="error",
+            error_type=type(exc).__name__,
+        )
         return False
 
 
