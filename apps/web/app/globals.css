@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4f7f6;
+  --foreground: #18201d;
+  --muted: #64716c;
+  --line: #dfe6e3;
+  --panel: #ffffff;
+  --accent: #d8ff65;
+  --accent-dark: #233d2f;
+  --critical: #d9433f;
+}
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  background:
+    radial-gradient(
+      circle at 85% -10%,
+      rgba(216, 255, 101, 0.24),
+      transparent 28rem
+    ),
+    var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--accent);
+  color: #142319;
+}
+
+.mono {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.grid-lines {
+  background-image:
+    linear-gradient(rgba(35, 61, 47, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(35, 61, 47, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
