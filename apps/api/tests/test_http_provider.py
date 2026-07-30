@@ -65,13 +65,27 @@ async def test_provider_retries_transient_http_failure(
             return httpx.Response(503, json={"error": "temporary"})
         return httpx.Response(
             200,
-            json={"choices": [{"message": {"content": json.dumps(analysis_payload())}}]},
+            json={
+                "choices": [{"message": {"content": json.dumps(analysis_payload())}}],
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 5,
+                    "total_tokens": 15,
+                    "prompt_cache_hit_tokens": 2,
+                    "prompt_cache_miss_tokens": 8,
+                },
+            },
         )
 
     monkeypatch.setattr("app.providers.http.asyncio.sleep", AsyncMock())
-    result = await client(httpx.MockTransport(handler), max_retries=1).complete([], AnalysisResult)
+    provider_client = client(httpx.MockTransport(handler), max_retries=1)
+    result = await provider_client.complete([], AnalysisResult)
     assert result.disposition.value == "release"
     assert attempts == 2
+    assert provider_client.last_call_metadata.http_status == 200
+    assert provider_client.last_call_metadata.schema_valid is True
+    assert provider_client.last_call_metadata.total_tokens == 15
+    assert provider_client.last_call_metadata.cached_prompt_tokens == 2
 
 
 def test_illegal_json_wrapper_and_trailing_comma_are_repaired() -> None:
@@ -93,7 +107,11 @@ async def test_second_schema_validation_failure_becomes_safe_provider_error(
         )
 
     monkeypatch.setattr("app.providers.http.asyncio.sleep", AsyncMock())
+    provider_client = client(httpx.MockTransport(handler), max_retries=1)
     with pytest.raises(ProviderError) as error:
-        await client(httpx.MockTransport(handler), max_retries=1).complete([], AnalysisResult)
+        await provider_client.complete([], AnalysisResult)
     assert attempts == 2
     assert error.value.code == "provider_unavailable"
+    assert provider_client.last_call_metadata.http_status == 200
+    assert provider_client.last_call_metadata.schema_valid is False
+    assert provider_client.last_call_metadata.error_type == "schema_validation_error"

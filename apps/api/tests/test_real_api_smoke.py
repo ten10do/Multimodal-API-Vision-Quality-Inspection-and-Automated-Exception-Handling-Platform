@@ -1,9 +1,21 @@
+from io import BytesIO
+
 import pytest
+from PIL import Image
 
 from app import real_api_smoke
 from app.config import get_settings
 from app.enums import Disposition, RiskLevel
+from app.providers.http import OpenAICompatibleClient, ProviderCallMetadata
 from app.schemas import AnalysisResult, VisionInspectionResult
+
+
+def test_real_api_smoke_uses_repository_legal_image() -> None:
+    content = real_api_smoke.minimal_image()
+    assert content.startswith(b"\x89PNG\r\n\x1a\n")
+    with Image.open(BytesIO(content)) as image:
+        assert image.width > 10
+        assert image.height > 10
 
 
 async def test_real_api_smoke_refuses_mock_mode_without_network(
@@ -42,8 +54,25 @@ async def test_real_api_smoke_calls_each_provider_once_with_safe_summary(
     class VisionStub:
         calls = 0
 
+        def __init__(self) -> None:
+            self.client = OpenAICompatibleClient(
+                provider_name="bailian",
+                api_key=bailian_placeholder,
+                base_url="https://bailian.invalid/v1",
+                model="vision-smoke-model",
+                timeout_seconds=1,
+                max_retries=0,
+            )
+
         async def inspect(self, image: bytes, context: object) -> VisionInspectionResult:
             self.calls += 1
+            self.client.last_call_metadata = ProviderCallMetadata(
+                http_status=200,
+                prompt_tokens=10,
+                completion_tokens=5,
+                total_tokens=15,
+                schema_valid=True,
+            )
             return VisionInspectionResult(
                 is_defective=False,
                 overall_confidence=0.99,
@@ -54,8 +83,25 @@ async def test_real_api_smoke_calls_each_provider_once_with_safe_summary(
     class ReasoningStub:
         calls = 0
 
+        def __init__(self) -> None:
+            self.client = OpenAICompatibleClient(
+                provider_name="deepseek",
+                api_key=deepseek_placeholder,
+                base_url="https://deepseek.invalid/v1",
+                model="reasoning-smoke-model",
+                timeout_seconds=1,
+                max_retries=0,
+            )
+
         async def analyze(self, request: object) -> AnalysisResult:
             self.calls += 1
+            self.client.last_call_metadata = ProviderCallMetadata(
+                http_status=200,
+                prompt_tokens=8,
+                completion_tokens=4,
+                total_tokens=12,
+                schema_valid=True,
+            )
             return AnalysisResult(
                 risk_level=RiskLevel.LOW,
                 probable_causes=["No defect"],
@@ -65,10 +111,10 @@ async def test_real_api_smoke_calls_each_provider_once_with_safe_summary(
                 rationale="Validated smoke response",
             )
 
-    vision = VisionStub()
-    reasoning = ReasoningStub()
     bailian_placeholder = "bailian-test-placeholder"
     deepseek_placeholder = "deepseek-test-placeholder"
+    vision = VisionStub()
+    reasoning = ReasoningStub()
     try:
         settings.ai_mode = "real"
         settings.bailian_api_key = bailian_placeholder
@@ -93,6 +139,8 @@ async def test_real_api_smoke_calls_each_provider_once_with_safe_summary(
         assert "provider=DeepSeek model=reasoning-smoke-model" in output
         assert output.count("status=success") == 2
         assert output.count("error_type=none") == 2
+        assert output.count("http_status=200") == 2
+        assert output.count("schema=passed") == 2
         assert "elapsed_ms=" in output
         assert bailian_placeholder not in output
         assert deepseek_placeholder not in output

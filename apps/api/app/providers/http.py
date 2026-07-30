@@ -3,6 +3,7 @@ import base64
 import json
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, TypeVar
 
 import httpx
@@ -17,6 +18,84 @@ from app.schemas import (
 )
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderCallMetadata:
+    http_status: int | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    cached_prompt_tokens: int | None = None
+    cache_miss_prompt_tokens: int | None = None
+    schema_valid: bool = False
+    error_type: str | None = None
+
+
+def _optional_token_count(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
+def _call_metadata(
+    response: httpx.Response | None,
+    body: object,
+    *,
+    schema_valid: bool,
+    error_type: str | None,
+) -> ProviderCallMetadata:
+    usage = body.get("usage") if isinstance(body, dict) else None
+    if not isinstance(usage, dict):
+        usage = {}
+    prompt_details = usage.get("prompt_tokens_details")
+    if not isinstance(prompt_details, dict):
+        prompt_details = {}
+    return ProviderCallMetadata(
+        http_status=response.status_code if response is not None else None,
+        prompt_tokens=_optional_token_count(usage.get("prompt_tokens")),
+        completion_tokens=_optional_token_count(usage.get("completion_tokens")),
+        total_tokens=_optional_token_count(usage.get("total_tokens")),
+        cached_prompt_tokens=_optional_token_count(
+            usage.get("prompt_cache_hit_tokens", prompt_details.get("cached_tokens"))
+        ),
+        cache_miss_prompt_tokens=_optional_token_count(usage.get("prompt_cache_miss_tokens")),
+        schema_valid=schema_valid,
+        error_type=error_type,
+    )
+
+
+def _classify_provider_error(error: Exception) -> str:
+    if isinstance(error, ProviderError):
+        return error.code
+    if isinstance(error, httpx.TimeoutException):
+        return "timeout_error"
+    if isinstance(error, httpx.HTTPStatusError):
+        status = error.response.status_code
+        if status == 400:
+            return "request_or_model_error"
+        if status == 401:
+            return "authentication_error"
+        if status == 402:
+            return "balance_error"
+        if status == 403:
+            return "permission_error"
+        if status == 404:
+            return "base_url_or_model_error"
+        if status == 422:
+            return "request_schema_error"
+        if status == 429:
+            return "rate_limit_or_balance_error"
+        if status >= 500:
+            return "provider_service_error"
+        return "http_error"
+    if isinstance(error, httpx.RequestError):
+        return "connection_or_base_url_error"
+    if isinstance(error, ValidationError):
+        return "schema_validation_error"
+    if isinstance(error, json.JSONDecodeError):
+        return "invalid_response_json"
+    return "invalid_response_envelope"
 
 
 def _extract_json(content: str) -> dict[str, Any]:
@@ -60,6 +139,7 @@ class OpenAICompatibleClient:
             "Content-Type": "application/json",
         }
         self.transport = transport
+        self.last_call_metadata = ProviderCallMetadata()
 
     async def complete(
         self,
@@ -74,6 +154,7 @@ class OpenAICompatibleClient:
             "response_format": {"type": "json_object"},
         }
         last_error: Exception | None = None
+        self.last_call_metadata = ProviderCallMetadata()
         async with httpx.AsyncClient(
             base_url=self.base_url,
             timeout=self.timeout,
@@ -81,13 +162,24 @@ class OpenAICompatibleClient:
             transport=self.transport,
         ) as client:
             for attempt in range(self.max_retries + 1):
+                response: httpx.Response | None = None
+                body: object = None
                 try:
                     response = await client.post("chat/completions", json=payload)
                     response.raise_for_status()
                     body = response.json()
+                    if not isinstance(body, dict):
+                        raise TypeError("Provider response envelope must be an object")
                     content = body["choices"][0]["message"]["content"]
                     parsed = _extract_json(content)
-                    return schema.model_validate(normalize(parsed) if normalize else parsed)
+                    result = schema.model_validate(normalize(parsed) if normalize else parsed)
+                    self.last_call_metadata = _call_metadata(
+                        response,
+                        body,
+                        schema_valid=True,
+                        error_type=None,
+                    )
+                    return result
                 except (
                     httpx.HTTPError,
                     KeyError,
@@ -97,6 +189,12 @@ class OpenAICompatibleClient:
                     ProviderError,
                 ) as exc:
                     last_error = exc
+                    self.last_call_metadata = _call_metadata(
+                        response,
+                        body,
+                        schema_valid=False,
+                        error_type=_classify_provider_error(exc),
+                    )
                     if attempt < self.max_retries:
                         await asyncio.sleep(min(2**attempt, 4))
         raise ProviderError(
