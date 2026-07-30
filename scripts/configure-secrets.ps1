@@ -31,6 +31,7 @@ function ConvertFrom-SecureValue {
 function Set-EnvironmentValue {
     param(
         [Parameter(Mandatory)]
+        [AllowEmptyString()]
         [string[]]$Lines,
 
         [Parameter(Mandatory)]
