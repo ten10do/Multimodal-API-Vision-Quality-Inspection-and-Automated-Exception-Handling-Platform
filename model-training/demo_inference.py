@@ -16,7 +16,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "inference-service"))
 
-from app.yolo_predictor import YoloPredictor  # noqa: E402
+from inference_app.yolo_predictor import YoloPredictor  # noqa: E402
 
 COLORS = [(220, 60, 60), (60, 160, 220), (60, 200, 120), (220, 180, 60), (180, 120, 220), (240, 140, 90)]
 

@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
 
-    database_url: str = "postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5432/vision_qc"
+    database_url: str = "postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5432/industrialvision_dev"
     inference_service_url: str = "http://127.0.0.1:8100"
     inference_timeout_seconds: float = 30.0
     max_upload_bytes: int = 10 * 1024 * 1024

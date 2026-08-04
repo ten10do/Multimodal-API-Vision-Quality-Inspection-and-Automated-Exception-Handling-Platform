@@ -16,8 +16,8 @@ import cv2
 import numpy as np
 import pytest
 
-from app.yolo_predictor import ModelLoadError, VisionInputError, YoloPredictor
-from app.vision_contract import InferenceResult
+from inference_app.yolo_predictor import ModelLoadError, VisionInputError, YoloPredictor
+from inference_app.vision_contract import InferenceResult
 
 CLASS_NAMES = {0: "crazing", 1: "inclusion", 2: "patches", 3: "pitted_surface", 4: "rolled-in_scale", 5: "scratches"}
 

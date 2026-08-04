@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from app.yolo_predictor import YoloPredictor
+from inference_app.yolo_predictor import YoloPredictor
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEIGHTS = PROJECT_ROOT / "model-training/runs/neu-det-yolov8s-baseline-2/weights/best.pt"

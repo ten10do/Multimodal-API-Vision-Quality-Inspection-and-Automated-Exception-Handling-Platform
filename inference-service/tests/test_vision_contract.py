@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from app.vision_contract import Detection, InferenceResult, utc_now_iso
+from inference_app.vision_contract import Detection, InferenceResult, utc_now_iso
 
 OK_DETECTION = dict(
     class_id=0,

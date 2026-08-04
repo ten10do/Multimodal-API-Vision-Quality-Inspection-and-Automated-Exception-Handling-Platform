@@ -37,7 +37,7 @@ cd ..
 
 # 4. 推理服务（独立 HTTP 进程，默认 8100 端口）
 cd inference-service
-../.venv/Scripts/python.exe -m uvicorn app.api:app --host 0.0.0.0 --port 8100
+../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --host 0.0.0.0 --port 8100
 cd ..
 
 # 5. 后端 API（默认 8000 端口）

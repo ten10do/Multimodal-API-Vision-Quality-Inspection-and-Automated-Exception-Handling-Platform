@@ -12,7 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
-from sqlalchemy import func, select  # noqa: E402
+from sqlalchemy import select  # noqa: E402
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.database import SessionLocal  # noqa: E402
 from app.enums import QualityResult, Severity  # noqa: E402
@@ -36,14 +37,19 @@ DEFAULT_RULES: list[dict] = [
 
 async def main() -> None:
     async with SessionLocal() as session:
-        count = (await session.execute(select(func.count()).select_from(QualityRule))).scalar_one()
-        if count > 0:
-            print(f"{count} rules already present, skipping seed")
-            return
+        # Idempotent upsert keyed on the unique business key
+        # (defect_type, priority, rule_version) from migration 0002.
+        inserted = 0
         for spec in DEFAULT_RULES:
-            session.add(QualityRule(**spec, rule_version=1, enabled=True))
+            values = {**spec, "rule_version": 1, "enabled": True}
+            stmt = pg_insert(QualityRule).values(**values)
+            stmt = stmt.on_conflict_do_nothing(
+                index_elements=["defect_type", "priority", "rule_version"]
+            )
+            result = await session.execute(stmt)
+            inserted += result.rowcount or 0
         await session.commit()
-        print(f"seeded {len(DEFAULT_RULES)} default quality rules")
+        print(f"seeded {inserted} new rules (existing kept, total unaffected)")
 
 
 if __name__ == "__main__":
