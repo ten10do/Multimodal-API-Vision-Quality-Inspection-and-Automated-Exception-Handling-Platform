@@ -22,7 +22,7 @@ def main() -> None:
     parser.add_argument("--imgsz", type=int, default=256)
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--project", default="model-training/runs")
+    parser.add_argument("--project", type=Path, default=(Path(__file__).parent / "runs").resolve())
     parser.add_argument("--name", default="neu-det-yolov8s-baseline")
     args = parser.parse_args()
 

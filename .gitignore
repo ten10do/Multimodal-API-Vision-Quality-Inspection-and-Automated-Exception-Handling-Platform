@@ -38,6 +38,7 @@ legacy/vision-qc-agent/apps/web/web/
 model-training/datasets/
 model-training/runs/
 inference-service/models/
+runs/
 *.pt
 *.pth
 *.onnx
