@@ -15,7 +15,7 @@ from pathlib import Path
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weights", type=Path, default=Path("model-training/runs/neu-det-yolov8s-baseline/weights/best.pt"))
+    parser.add_argument("--weights", type=Path, default=Path("model-training/runs/neu-det-yolov8s-baseline-2/weights/best.pt"))
     parser.add_argument("--data", type=Path, default=Path("model-training/datasets/neu-det-yolo/data.yaml"))
     parser.add_argument("--out", type=Path, default=Path("model-training/runs/neu-det-yolov8s-baseline/test_metrics.json"))
     args = parser.parse_args()

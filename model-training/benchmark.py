@@ -19,7 +19,7 @@ import torch
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--weights", type=Path, default=Path("model-training/runs/neu-det-yolov8s-baseline/weights/best.pt"))
+    parser.add_argument("--weights", type=Path, default=Path("model-training/runs/neu-det-yolov8s-baseline-2/weights/best.pt"))
     parser.add_argument("--images", type=Path, default=Path("model-training/datasets/neu-det-yolo/test/images"))
     parser.add_argument("--warmup", type=int, default=10)
     parser.add_argument("--iters", type=int, default=100)

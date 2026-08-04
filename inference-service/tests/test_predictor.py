@@ -18,7 +18,7 @@ from app.yolo_predictor import ModelLoadError, VisionInputError, YoloPredictor
 from app.vision_contract import InferenceResult
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-WEIGHTS = PROJECT_ROOT / "model-training/runs/neu-det-yolov8s-baseline/weights/best.pt"
+WEIGHTS = PROJECT_ROOT / "model-training/runs/neu-det-yolov8s-baseline-2/weights/best.pt"
 TEST_IMG_DIR = PROJECT_ROOT / "model-training/datasets/neu-det-yolo/test/images"
 
 
