@@ -33,3 +33,15 @@ uploads/
 # Legacy archive leftovers (junk copies, kept only for disk-space convenience)
 apps/
 legacy/vision-qc-agent/apps/web/web/
+
+# Datasets and model artifacts must never enter git (Phase 1 requirement)
+model-training/datasets/
+model-training/runs/
+inference-service/models/
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+mlruns/
+
