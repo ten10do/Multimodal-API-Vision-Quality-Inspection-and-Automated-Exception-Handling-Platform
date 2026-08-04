@@ -1,1 +1,0 @@
-"""Vision QC API package."""
