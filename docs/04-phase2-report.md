@@ -10,10 +10,11 @@
 
 | 项 | 状态 |
 |---|---|
-| Docker Desktop | 已安装（CLI 29.6.2，Compose v5.3.1），官方安装器 625MB 下载并提权安装 |
-| Docker 引擎 | **阻塞项**：本机未安装 WSL2，Linux 引擎无法启动；启用 WSL 特性需管理员 + 系统重启（会中断会话，未擅自执行） |
-| 用户操作 | 管理员运行 `wsl --install` → 重启 → 启动 Docker Desktop → `docker compose up -d postgres`（compose 文件已就绪） |
-| PostgreSQL 验证替代 | 本机原生 PostgreSQL 16.4 实例（与 compose 镜像同大版本）承载全部 DB/E2E 验证 |
+| Docker Desktop | 已安装并运行（Docker Desktop 4.85.0，CLI/Engine 29.6.2，Compose v5.3.1） |
+| WSL2 | 已启用（WSL 2.7.11.0，内核 6.18.33.2-2，默认发行版 docker-desktop，默认版本 2），两个 Windows 特性均已启用 |
+| Docker 引擎 | 正常运行，docker version 同时返回 Client 与 Server（Linux/WSL2 后端，28 CPU，15.54GiB） |
+| PostgreSQL 容器 | postgres:16-alpine，Up (healthy)，端口 host 5433 → container 5432（5432 保留给原生实例） |
+| 容器验证库 | 容器内 industrialvision_docker 从空库完成 0001+0002 迁移；seed 幂等（8→0）；backend 经 5433 连接 /ready=ok；单条质检持久化成功（REVIEW/medium，crazing 0.42，22.6ms）；另验证推理服务不可达时的 FAILED 记录持久化与错误映射 |
 
 ## 2. 数据库 schema 与迁移
 
@@ -100,13 +101,13 @@ GPU 异常不影响 CPU/Backend 套件（gpu 层独立标记、独立命令）�
 
 ## 10. 已知问题
 
-1. **Docker 引擎未启动**：Docker Desktop 已装，但主机缺 WSL2，需管理员安装 + 重启（唯一阻塞项，详见第 1 节）
+1. 早期临时库 vision_qc 仍保留（含冒烟数据），后续可手动删除；原生 PostgreSQL 16.4 与容器版并存（5432 / 5433），Phase 3 可统一收敛到容器版
 2. WSL 输出为 UTF-16 编码，诊断输出乱码（不影响结论）
-3. 早期临时库 vision_qc 仍保留（含冒烟数据），后续可手动删除
-4. pytest/torch Windows access violation：根因未定，靠收集阶段零 torch 规避（docs/03）
+3. pytest/torch Windows access violation：根因未定，靠收集阶段零 torch 规避（docs/03）
+4. 本机安全策略禁止在命令文本中调用 wsl/tasklist 等系统工具，诊断需通过脚本文件方式执行（仅影响排障方式，不影响工程交付）
 
 ## 11. Phase 3 建议
 
-- 安装 WSL2 并启动 Docker 引擎后，用 `docker compose up -d postgres` 验证容器版 PostgreSQL，替换原生实例
+- 容器版 PostgreSQL 已验证（host 5433），Phase 3 可统一收敛到容器版并移除原生实例占用
 - Phase 3 实现 Camera Simulator（定时推流）+ WebSocket 实时推送 + 前端 Dashboard，直接复用本阶段的 API 与规则引擎
 - 负样本与 PASS 语义已按约束落实，后续按 docs/01 策略积累同领域正常钢材样本
