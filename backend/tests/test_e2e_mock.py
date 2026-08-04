@@ -28,7 +28,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REAL_IMAGE = PROJECT_ROOT / "model-training/datasets/neu-det-yolo/test/images/crazing_101.jpg"
 
-DB_URL = os.environ.get("IVQC_DATABASE_URL", "postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5432/industrialvision_test")
+DB_URL = os.environ.get("IVQC_DATABASE_URL", "postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_test")
 
 
 async def _db_up(url: str) -> bool:
@@ -66,19 +66,14 @@ class StubInference:
 
 @pytest.fixture(scope="module")
 def db_ready():
-    import asyncio
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    try:
+        from prepare_test_db import prepare_test_db
 
-    if not asyncio.run(_db_up(DB_URL)):
-        pytest.skip("test postgres not reachable")
-    env = {**os.environ, "IVQC_DATABASE_URL": DB_URL}
-    subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        cwd=BACKEND_ROOT,
-        env=env,
-        check=True,
-        capture_output=True,
-    )
-    return env
+        prepare_test_db()
+    except SystemExit as exc:
+        pytest.fail(f"test database provisioning failed: {exc}")
+    return {**os.environ, "IVQC_DATABASE_URL": DB_URL}
 
 
 async def test_mock_e2e_no_gpu_required(db_ready):

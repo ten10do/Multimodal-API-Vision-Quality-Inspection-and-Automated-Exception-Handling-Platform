@@ -41,22 +41,38 @@ class InferenceClient:
 
     The backend never imports model code; everything crosses the wire as the
     standardized Vision Contract.
+
+    The underlying httpx client is cached per event loop and reused, so the
+    connection stays pooled across requests. Creating a client per request
+    costs ~150 ms on Windows and inflates E2E latency.
     """
+
+    _clients_by_loop: dict[int, httpx.AsyncClient] = {}
 
     def __init__(self, base_url: str | None = None, timeout_seconds: float | None = None) -> None:
         settings = get_settings()
         self.base_url = (base_url or settings.inference_service_url).rstrip("/")
         self.timeout = timeout_seconds if timeout_seconds is not None else settings.inference_timeout_seconds
 
+    def _client(self) -> httpx.AsyncClient:
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+        key = id(loop)
+        client = self._clients_by_loop.get(key)
+        if client is None:
+            client = httpx.AsyncClient(timeout=self.timeout)
+            self._clients_by_loop[key] = client
+        return client
+
     async def infer(self, image_bytes: bytes, filename: str = "image.jpg", request_id: str | None = None) -> InferenceResult:
         rid = request_id or f"req-{uuid.uuid4().hex[:12]}"
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    f"{self.base_url}/v1/infer",
-                    files={"file": (filename, image_bytes, "application/octet-stream")},
-                    headers={"X-Request-ID": rid},
-                )
+            response = await self._client().post(
+                f"{self.base_url}/v1/infer",
+                files={"file": (filename, image_bytes, "application/octet-stream")},
+                headers={"X-Request-ID": rid},
+            )
         except httpx.TimeoutException as exc:
             logger.warning("inference timeout request_id=%s", rid)
             raise InferenceTimeoutError(f"inference service timed out after {self.timeout}s") from exc

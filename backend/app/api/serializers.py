@@ -8,6 +8,7 @@ def to_inspection_out(inspection: Inspection) -> InspectionOut:
     return InspectionOut(
         inspection_id=inspection.inspection_id,
         product_id=inspection.product.product_id,
+        batch_id=inspection.batch_id,
         status=inspection.status,
         quality_result=inspection.quality_result,
         severity=inspection.severity,

@@ -53,6 +53,7 @@ class Inspection(TimestampMixin, Base):
     inspection_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id"), index=True, nullable=False)
     idempotency_key: Mapped[str | None] = mapped_column(String(128), unique=True, index=True, nullable=True)
+    batch_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
 
     status: Mapped[InspectionStatus] = mapped_column(
         SAEnum(InspectionStatus, native_enum=False), nullable=False, default=InspectionStatus.PENDING

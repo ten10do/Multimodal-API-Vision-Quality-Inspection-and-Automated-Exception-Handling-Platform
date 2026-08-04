@@ -17,7 +17,8 @@ PyTorch / YOLOv8 / PatchCore / PaddleOCR / FastAPI / SQLAlchemy / WebSocket / Re
 - [x] Phase 0 需求与架构基线（见 [docs/00-phase0-baseline.md](docs/00-phase0-baseline.md)）
 - [x] Phase 1 Vision MVP（YOLOv8s + NEU-DET，见 [docs/02-phase1-report.md](docs/02-phase1-report.md)）
 - [x] Phase 2 Backend MVP（FastAPI + PostgreSQL + Rule Engine + Inference HTTP API，见本文件与 docs）
-- [ ] Phase 3 Realtime Pipeline
+- [x] Phase 3 Realtime Pipeline（Camera Simulator + Orchestrator + WebSocket，见 [docs/05-phase3-benchmark.md](docs/05-phase3-benchmark.md)）
+- [ ] Phase 4 Dashboard
 
 ## 本地启动（Phase 2）
 
@@ -57,6 +58,42 @@ cd ..
 curl -s -X POST http://localhost:8000/api/v1/inspections \
   -F "file=@model-training/datasets/neu-det-yolo/test/images/crazing_101.jpg" \
   -F "product_id=NEU-0001" -F "production_line=line-a" -F "station=qc-01"
+```
+
+## Realtime Pipeline 启动（Phase 3）
+
+```bash
+# 1. 推理服务（独立进程，GPU）
+cd inference-service
+../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --port 8100
+cd ..
+
+# 2. 后端（指向容器 PostgreSQL）
+cd backend
+IVQC_DATABASE_URL=postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_dev \
+IVQC_INFERENCE_SERVICE_URL=http://127.0.0.1:8100 \
+../.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000
+cd ..
+
+# 3. Camera Simulator + Orchestrator（通过 Backend API 进入系统）
+.venv/Scripts/python.exe -m simulator.run_pipeline \
+  --images 60 --interval-ms 500 --workers 2 --queue-size 20 \
+  --backend-url http://127.0.0.1:8000 --batch batch-demo-001
+```
+
+实时事件订阅（WebSocket）：
+
+```bash
+# 用 websocat 或任意 WS 客户端连接
+ws://127.0.0.1:8000/api/v1/ws/inspections
+```
+
+实时指标：`GET http://127.0.0.1:8000/api/v1/realtime/status`。
+
+测试库准备（可复现，仅操作容器内 industrialvision_test）：
+
+```bash
+.venv/Scripts/python.exe scripts/prepare_test_db.py --recreate
 ```
 
 ## 测试

@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class InspectionServiceError(Exception):
-    def __init__(self, code: str, message: str, http_status: int = 500) -> None:
+    def __init__(self, code: str, message: str, http_status: int = 500, inspection_id: str | None = None) -> None:
         self.code = code
         self.message = message
         self.http_status = http_status
+        self.inspection_id = inspection_id
         super().__init__(message)
 
 
@@ -56,6 +57,7 @@ class InspectionService:
             inspection_id=inspection_id,
             product_id=product.id,
             idempotency_key=data.idempotency_key,
+            batch_id=data.batch_id,
             status=InspectionStatus.PENDING,
         )
         session.add(inspection)
@@ -71,7 +73,9 @@ class InspectionService:
         except Exception as exc:
             await self._mark_failed(session, inspection, str(exc))
             logger.warning("inference failed inspection=%s error=%s", inspection_id, exc)
-            raise InspectionServiceError("inference_failed", str(exc), http_status=_http_status_for(exc)) from exc
+            raise InspectionServiceError(
+                "inference_failed", str(exc), http_status=_http_status_for(exc), inspection_id=inspection_id
+            ) from exc
 
         rules = await self._load_rules(session)
         decision = QualityRuleEngine(rules).evaluate(

@@ -28,7 +28,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REAL_IMAGE = PROJECT_ROOT / "model-training/datasets/neu-det-yolo/test/images/crazing_101.jpg"
 
-DB_URL = os.environ.get("IVQC_DATABASE_URL", "postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5432/industrialvision_test")
+DB_URL = os.environ.get("IVQC_DATABASE_URL", "postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_test")
 INF_URL = os.environ.get("IVQC_INFERENCE_SERVICE_URL", "http://127.0.0.1:8100")
 
 
@@ -53,20 +53,24 @@ async def _db_up(url: str) -> bool:
 
 @pytest.fixture(scope="module")
 def services_ready():
+    """Fail-fast provisioning: the Docker test DB must be reproducible and the
+    inference service reachable. No silent skips here."""
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    try:
+        from prepare_test_db import prepare_test_db
+
+        prepare_test_db()
+    except SystemExit as exc:
+        pytest.fail(f"test database provisioning failed: {exc}")
+
     if not asyncio.run(_http_up(INF_URL)):
-        pytest.skip("inference service not reachable, run it first")
-    if not asyncio.run(_db_up(DB_URL)):
-        pytest.skip("postgres not reachable, start docker compose postgres first")
+        pytest.fail(
+            f"inference service not reachable at {INF_URL}. Start it with:\n"
+            "  cd inference-service && ../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --port 8100"
+        )
     if not REAL_IMAGE.exists():
-        pytest.skip("real test image missing")
+        pytest.fail(f"real test image missing: {REAL_IMAGE}")
     env = {**os.environ, "IVQC_DATABASE_URL": DB_URL, "IVQC_INFERENCE_SERVICE_URL": INF_URL}
-    subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        cwd=BACKEND_ROOT,
-        env=env,
-        check=True,
-        capture_output=True,
-    )
     return env
 
 
