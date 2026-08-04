@@ -13,9 +13,13 @@ NEU-DET 只包含缺陷样本（1800 张，6 类缺陷，每张图至少一个�
 
 | 阶段 | 负样本来源 | 用途 | 是否计入真实指标 |
 |---|---|---|---|
-| Phase 1 | 真实清洁表面图（第二真实数据集，如 MVTec AD normal 类）；合成空白图仅用于单测 | 验证零检测输出、规则引擎 PASS 路径 | 否，仅作行为验证 |
-| Phase 2 至 4 | 相机模拟器流水线帧，零检测帧进入 PASS 候选 | 累积 normal sample bank | 候选，未复核前不计入 |
-| Phase 5+ | 人工复核批准的无缺陷图像 | 构成负样本训练集，用于后续误报优化或 background 类训练 | 计入（复核后） |
+| Phase 1 | 无（NEU-DET 全为缺陷样本） | YOLO 训练与测试集评估均不含无缺陷样本 | 否 |
+| Phase 2 | 无 | `detections 为空 → PASS` 仅验证业务链路行为，不构成无缺陷性能证明 | 否 |
+| Phase 3+ | 相机模拟器流水线帧，零检测帧进入 PASS 候选 | 累积 normal sample bank | 候选，未复核前不计入 |
+| Phase 5+ | 人工复核批准的无缺陷图像 | 构成负样本训练集 | 计入（复核后） |
+| PatchCore 阶段 | 具有正常/异常结构的数据集（同领域优先） | 正式异常检测评估 | 计入 |
+
+领域边界约束：NEU-DET 是热轧钢带表面，MVTec AD 是瓶罐/螺丝/坚果等异质物体表面，**领域不同，MVTec AD 的 normal 类不得作为当前钢带 YOLO 模型的 PASS 性能证明**。正式的无缺陷性能评估必须使用同领域真实正常钢材样本。
 
 ## 3. 规则引擎的 PASS 定义（Phase 2 起）
 
@@ -31,6 +35,7 @@ PASS  ⇔  无任何检测框同时满足对应缺陷规则的全部阈值
 
 - 真实检测指标（Precision / Recall / mAP）只在真实 NEU-DET test split 上计算，见 `model-training/evaluate.py`。
 - 合成图像只用于确定性单元测试（Phase 1E），测试产物与训练指标在文档与报告中明确分离。
+- `detections 为空 → PASS` 在 Phase 2 只表示业务系统行为，不代表模型已证明产品真实无缺陷。
 - normal sample bank 中的每张图必须携带来源与复核记录（`provenance.json` 扩展），无来源图像不得进入任何指标集。
 
 ## 5. Normal Sample Bank 设计

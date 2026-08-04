@@ -79,7 +79,7 @@ class YoloPredictor:
                 return YOLO(str(self.model_path)).to("cpu")
             raise ModelLoadError(f"failed to load model on {device}: {exc}") from exc
 
-    def _read_image(self, image: str | Path | np.ndarray) -> np.ndarray:
+    def _read_image(self, image: str | Path | np.ndarray | bytes) -> np.ndarray:
         if isinstance(image, (str, Path)):
             path = Path(image)
             if not path.exists():
@@ -87,6 +87,13 @@ class YoloPredictor:
             img = cv2.imread(str(path), cv2.IMREAD_COLOR)
             if img is None:
                 raise VisionInputError(f"cannot decode image (corrupted or unsupported): {path}")
+            return img
+        if isinstance(image, bytes):
+            if not image:
+                raise VisionInputError("empty image bytes")
+            img = cv2.imdecode(np.frombuffer(image, dtype=np.uint8), cv2.IMREAD_COLOR)
+            if img is None:
+                raise VisionInputError("cannot decode image bytes (corrupted or unsupported)")
             return img
         if isinstance(image, np.ndarray):
             if image.size == 0:

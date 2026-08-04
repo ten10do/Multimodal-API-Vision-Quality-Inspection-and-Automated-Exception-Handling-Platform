@@ -151,10 +151,10 @@ crazing 是公认难类（细微网状纹），与公开文献一致。评估完
 
 ## 12. 已知问题
 
-1. **opencv-python 5.x DLL 冲突**：5.0.0.93 与 torch 2.11 在 Windows 上产生访问冲突，必须用 4.12.0.88。
-2. **Windows DLL 偶发访问冲突**：pytest 收集阶段 torch 导入偶发崩溃，1 至 2 次重试可恢复。已知 Windows + pytest + torch 现象。
-3. **crazing 弱类**：AP50 仅 0.31，与文献一致，需要更大模型或更长训练才能提升。
-4. **Docker 未安装**：Phase 2 需要，数据库/Redis/MinIO 编排依赖 Docker Desktop。
+1. **Windows 下 pytest 进程内 torch 导入偶发 access violation**：多次观察到，崩溃点固定为 torch 原生扩展加载（`torch/__init__.py` 的 create_module 阶段）。根因尚未最终确定，证据与假设见 `docs/03-windows-torch-issue.md`。缓解措施为测试分层，默认单元测试收集阶段不再加载 torch 与任何模型。
+2. **依赖 pin**：当前稳定组合为 torch==2.11.0+cu128、torchvision==0.26.0+cu128、opencv-python==4.12.0.88（cu128 因 RTX 5060 sm_120 需要）。未对 opencv 5.x 做过确定性归因，仅保留经过实际运行验证的 pin。
+3. **crazing 弱类**：测试集 AP50 仅 0.31，与公开文献水平一致。
+4. **Docker 未安装**：Phase 2 需要，见 Phase 2 汇报。
 
 ## 13. Phase 2 建议
 
@@ -162,5 +162,5 @@ crazing 是公认难类（细微网状纹），与公开文献一致。评估完
 - 安装 Docker Desktop（你已确认）以启用 PostgreSQL/Redis/MinIO。
 - 设计 Quality Rule Engine：`quality_rules` 表 + RuleEngine 类，规则版本化，禁用硬编码阈值。
 - Phase 2C 通过推理服务把 YoloPredictor 暴露为 HTTP API，后端通过 HTTP 调用而非进程内 import，保留独立部署边界。
-- 负样本策略：用 MVTec AD normal 类作为真实清洁样本验证规则引擎 PASS 路径（已写入 `docs/01-negative-sample-strategy.md`）。
+- PASS 路径（detections 为空 → PASS）在 Phase 2 只验证业务链路，不构成无缺陷性能证明；同领域真实正常钢材样本留待后续阶段，正式异常检测评估在 PatchCore 阶段进行（见 `docs/01-negative-sample-strategy.md`）。
 - 注意 Phase 2 期间可能再现 Windows 路径/权限类坑，建议第一次 `docker compose up` 前先验证 Docker 安装与 WSL2。
