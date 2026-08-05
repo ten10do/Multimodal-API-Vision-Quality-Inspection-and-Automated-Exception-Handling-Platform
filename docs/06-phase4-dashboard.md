@@ -120,3 +120,22 @@ simulator 时指标移动、Live 页 WS 收到事件、追溯查询打开带图�
    `completed > captured`（不到 2s 的滞后）；守恒定律在每个 telemetry
    tick 上严格成立。
 4. Phase 5（交互式 Dashboard）前可收敛原生 PostgreSQL 至容器实例。
+## Gate 1 修订（指标快照语义）
+
+质量快照与运行期遥测彻底分离，API 返回 `snapshot_at` / `telemetry_at`：
+
+- Quality / persisted facts（DB 单一事实）：`completed_total`、`failed_total`、
+  `pass_total`、`review_total`、`fail_total`、`total_inspected`、`yield_rate`。
+  不变量：`pass+review+fail == completed`、`total_inspected == completed + failed`。
+- Runtime telemetry（管线视图，独立刷新）：`captured_total`、`queued_current`、
+  `processing_current`、`queue_depth`、`throughput`。
+- `captured_total` 不与 DB 计数器做跨时间戳守恒比较；Dashboard 单独以
+  "Captured (Pipeline)" 卡片呈现，freshness bar 展示两类时间戳。
+- 回归测试覆盖 2840 vs 2843 类矛盾（telemetry 滞后时质量快照保持自洽）。
+
+## Gate 2 修订（依赖可复现性）
+
+标准安装 = `npm ci`。GitHub Actions 双 runner（ubuntu + windows-latest）验证
+`npm ci / npm test / npm run build` 全绿（workflow: .github/workflows/frontend-ci.yml）。
+本机宿主特异性问题（npm 解包丢失 proxy-agents dist/index.js）已记录证据，
+不作为标准安装步骤。

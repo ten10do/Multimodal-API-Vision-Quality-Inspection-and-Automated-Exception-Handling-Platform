@@ -99,12 +99,13 @@ ws://127.0.0.1:8000/api/v1/ws/inspections
 
 ## Frontend Dashboard 启动与演示（Phase 4）
 
-依赖：Node 22.22.2 + npm。
+依赖：Node 22.22.2 + npm。依赖安装使用锁文件（CI 验证通过，详见 Gate 2 说明）。
 
 ```bash
 cd frontend
-"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" install --no-audit --no-fund
-"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" exec playwright install chromium
+# 标准安装（基于 package-lock.json，CI 干净 runner 验证 npm ci / npm test / npm run build 全绿）
+npm ci --no-audit --no-fund
+npm exec playwright install chromium
 
 # 启动顺序：推理服务 → 后端 → 模拟器 → 前端
 cd ../inference-service
@@ -134,9 +135,32 @@ NODE_OPTIONS="" "C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe
 前端测试：
 
 ```bash
-"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" test          # vitest 25 项
+"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" test          # vitest 27 项
 NODE_OPTIONS="" "C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" exec playwright test  # 浏览器 E2E 5 项
 ```
+
+## Frontend 依赖可复现性（Gate 2）
+
+标准安装路径为 `npm ci`（基于已提交的 `frontend/package-lock.json`），已在
+GitHub Actions 双 runner（ubuntu-latest + windows-latest）上验证：
+
+```
+npm ci → verify proxy-agents dist → npm test → npm run build  全部通过
+```
+
+本机（Windows + npm 11.16.0 + WorkBuddy safe-delete shim 注入 NODE_OPTIONS）
+存在宿主特异性问题：`http-proxy-agent` / `agent-base` / `https-proxy-agent`
+三个包的 `dist/index.js` 在 npm 解包时丢失，导致 vitest 无法启动。证据：
+
+- 干净目录 + 全新 npm cache 下 `npm ci` 复现（非缓存问题）；
+- 同一 lockfile 在 GitHub Actions 干净 runner（含 windows-latest）上
+  `npm ci` 完整正常，dist 文件校验通过；
+- 根因指向本机 host FS 层 / safe-delete shim 对 npm 解包的干扰。
+
+本机复现该问题时，可先应用临时补丁（从 registry tarball 补齐 3 个文件），
+该补丁**不是**标准安装步骤；标准步骤以 CI 验证的 `npm ci` 为准。此外本机
+运行 vite build / playwright 等会自行清理临时目录的工具时，需
+`NODE_OPTIONS=""` 以避开 safe-delete shim 对临时目录回收的拦截。
 
 ## 测试
 

@@ -74,7 +74,7 @@ class RealtimeMetrics:
     async def update_telemetry(self, telemetry: dict) -> None:
         async with self._lock:
             self._telemetry.update(telemetry)
-            self._telemetry_updated_at = time.monotonic()
+            self._telemetry_updated_at = time.time()  # wall clock for telemetry_at
 
     async def reset(self) -> None:
         async with self._lock:

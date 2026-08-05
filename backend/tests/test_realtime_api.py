@@ -130,3 +130,7 @@ async def test_telemetry_update(client):
     assert body["queued_current"] == 7
     assert body["worker_count"] == 2
     assert body["queue_peak_depth"] == 9
+    # telemetry_at must be a wall-clock ISO timestamp (regression: monotonic
+    # seconds were once fed to fromtimestamp -> 1970 garbage)
+    assert body["telemetry_at"] is not None and body["telemetry_at"].startswith("20")
+    assert body["snapshot_at"] is not None and body["snapshot_at"].startswith("20")
