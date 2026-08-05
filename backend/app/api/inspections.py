@@ -84,6 +84,13 @@ async def create_inspection(
         await metrics.record_completed(eager.quality_result.value, elapsed_ms, eager.inference_latency_ms)
     event = _build_event(eager, event_type="inspection.completed")
     schedule_broadcast(event.to_broadcast())
+
+    # 5B: REVIEW inspections automatically enter the human review queue
+    # (idempotent; system FAILED never creates a task). `eager` carries the
+    # defects snapshot loaded for the response.
+    from ..services.review_service import ReviewService
+
+    await ReviewService().create_task_for_inspection(session, eager)
     return detail
 
 

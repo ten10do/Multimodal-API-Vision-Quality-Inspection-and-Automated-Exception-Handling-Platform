@@ -1,6 +1,14 @@
 // REST client. All fetch URLs live here, never scattered in components.
 
-import type { Inspection, InspectionFilters, RealtimeStatus } from "../types";
+import type {
+  HumanDecision,
+  Inspection,
+  InspectionFilters,
+  RealtimeStatus,
+  ReviewMetrics,
+  ReviewTask,
+  TrainingCandidate,
+} from "../types";
 
 const API_BASE = "/api/v1";
 
@@ -40,13 +48,32 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function toQuery(filters: InspectionFilters): string {
+export function toQuery(filters: object): string {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(filters)) {
     if (v !== undefined && v !== null && v !== "") params.set(k, String(v));
   }
   const qs = params.toString();
   return qs ? `?${qs}` : "";
+}
+
+export interface ReviewFilters {
+  status?: string;
+  priority?: number;
+  defect_type?: string;
+  production_line?: string;
+  station?: string;
+  batch_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+function jsonRequest<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 export const api = {
@@ -62,4 +89,32 @@ export const api = {
 
   productInspections: (productId: string): Promise<Inspection[]> =>
     request(`/products/${productId}/inspections`),
+
+  // ---- Phase 5: human review ----
+  listReviews: (filters: ReviewFilters = {}): Promise<ReviewTask[]> =>
+    request(`/reviews${toQuery(filters)}`),
+
+  getReview: (taskId: string): Promise<ReviewTask> => request(`/reviews/${taskId}`),
+
+  claimReview: (taskId: string, reviewer: string): Promise<ReviewTask> =>
+    jsonRequest(`/reviews/${taskId}/claim`, { reviewer }),
+
+  resolveReview: (
+    taskId: string,
+    reviewer: string,
+    humanDecision: HumanDecision,
+    humanLabel: string | null,
+    reason: string | null,
+  ): Promise<ReviewTask> =>
+    jsonRequest(`/reviews/${taskId}/resolve`, {
+      reviewer,
+      human_decision: humanDecision,
+      human_label: humanLabel,
+      reason,
+    }),
+
+  reviewMetrics: (): Promise<ReviewMetrics> => request("/reviews-metrics"),
+
+  trainingCandidates: (kind: "all" | "corrected" | "disagreed" | "low_confidence" = "all"): Promise<TrainingCandidate[]> =>
+    request(`/training-candidates?kind=${kind}`),
 };

@@ -24,6 +24,34 @@ EventType = Literal["inspection.completed", "inspection.failed"]
 # by the backend and broadcast here.
 PipelineStatus = Literal["CAPTURED", "QUEUED", "PROCESSING", "COMPLETED", "FAILED"]
 
+ReviewEventType = Literal["review.created", "review.claimed", "review.resolved"]
+
+
+class ReviewEvent(BaseModel):
+    """Review lifecycle notification (5I). DB remains the source of truth;
+    these events only notify subscribers."""
+
+    event_id: str = Field(default_factory=lambda: f"evt-{uuid.uuid4().hex[:12]}")
+    event_type: ReviewEventType
+    timestamp: str = Field(default_factory=utc_now_iso)
+    review_task_id: str
+    inspection_id: str
+    product_id: str
+    status: str  # PENDING / IN_REVIEW / RESOLVED
+    priority: int | None = None
+    assigned_to: str | None = None
+    reviewer: str | None = None
+    human_decision: str | None = None
+    final_quality_result: str | None = None
+    top_defect_class: str | None = None
+    top_confidence: float | None = None
+    severity: str | None = None
+    model_version: str | None = None
+    image_url: str | None = None
+
+    def to_broadcast(self) -> dict:
+        return self.model_dump()
+
 
 class InspectionEvent(BaseModel):
     event_id: str = Field(default_factory=lambda: f"evt-{uuid.uuid4().hex[:12]}")

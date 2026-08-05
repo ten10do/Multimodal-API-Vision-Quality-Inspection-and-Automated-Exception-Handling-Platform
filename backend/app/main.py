@@ -8,7 +8,7 @@ from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from .api import inspections, products, quality_rules, realtime
+from .api import inspections, products, quality_rules, realtime, reviews
 from .config import get_settings
 from .database import engine
 
@@ -44,6 +44,7 @@ def create_app() -> FastAPI:
     app.include_router(quality_rules.router)
     app.include_router(realtime.rt_router)
     app.include_router(realtime.ws_router)
+    app.include_router(reviews.router)
 
     @app.exception_handler(FastAPIHTTPException)
     async def http_error_handler(request: Request, exc: FastAPIHTTPException) -> JSONResponse:

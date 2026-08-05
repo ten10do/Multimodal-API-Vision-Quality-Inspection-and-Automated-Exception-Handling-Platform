@@ -101,6 +101,10 @@ class InspectionService:
 
         inspection.status = InspectionStatus.COMPLETED
         inspection.quality_result = decision.quality_result
+        # 非 REVIEW：final = ai（业务最终事实立即确立）；REVIEW 留空，待人工 resolve（5G）
+        inspection.final_quality_result = (
+            decision.quality_result if decision.quality_result != QualityResult.REVIEW else None
+        )
         inspection.severity = decision.severity
         inspection.model_name = contract.model_name
         inspection.model_version = contract.model_version

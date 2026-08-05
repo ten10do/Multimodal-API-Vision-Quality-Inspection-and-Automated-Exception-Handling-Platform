@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { InspectionEvent, WsConnectionState } from "../types";
+import type { WsConnectionState, WsEvent } from "../types";
 import { parseWsEvent, pushDeduped } from "../utils/transforms";
 import { DEFAULT_WS_URL, InspectionSocket } from "../ws/socket";
 
 export const MAX_LIVE_EVENTS = 100; // bounded live list (4H)
 
 export interface LiveInspectionState {
-  events: InspectionEvent[];
+  events: WsEvent[];
   state: WsConnectionState;
   reconnect: () => void;
 }
 
-/** Live WS subscription with bounded list, dedup, reconnect + reconciliation. */
+/** Live WS subscription with bounded list, dedup, reconnect + reconciliation.
+ *  Events are either inspection.* or review.* notifications (5I); the DB is
+ *  the source of truth and REST reconciliation runs after every (re)connect. */
 export function useInspectionSocket(onReconcile: () => void): LiveInspectionState {
-  const [events, setEvents] = useState<InspectionEvent[]>([]);
+  const [events, setEvents] = useState<WsEvent[]>([]);
   const [state, setState] = useState<WsConnectionState>("connecting");
   const socketRef = useRef<InspectionSocket | null>(null);
   const onReconcileRef = useRef(onReconcile);

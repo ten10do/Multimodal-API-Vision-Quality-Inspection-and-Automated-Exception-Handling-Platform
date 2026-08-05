@@ -3,10 +3,10 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum as SAEnum, Float, ForeignKey, Integer, JSON, String, func
+from sqlalchemy import Boolean, DateTime, Enum as SAEnum, Float, ForeignKey, Index, Integer, JSON, String, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from .enums import BatchStatus, InspectionStatus, QualityResult, Severity
+from .enums import BatchStatus, HumanDecision, InspectionStatus, QualityResult, ReviewTaskStatus, Severity
 
 
 class Base(DeclarativeBase):
@@ -59,6 +59,11 @@ class Inspection(TimestampMixin, Base):
         SAEnum(InspectionStatus, native_enum=False), nullable=False, default=InspectionStatus.PENDING
     )
     quality_result: Mapped[QualityResult | None] = mapped_column(SAEnum(QualityResult, native_enum=False), nullable=True)
+    # AI 原始判定（创建时写入，永不修改）；final_quality_result 为业务最终事实（5G）。
+    # 非 REVIEW 的 inspection 在创建时 final = ai；REVIEW 在人工 resolve 后写入。
+    final_quality_result: Mapped[QualityResult | None] = mapped_column(
+        SAEnum(QualityResult, native_enum=False), nullable=True
+    )
     severity: Mapped[Severity | None] = mapped_column(SAEnum(Severity, native_enum=False), nullable=True)
     anomaly_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 
@@ -104,3 +109,89 @@ class QualityRule(TimestampMixin, Base):
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100, comment="lower is evaluated first")
     rule_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+# 一个 inspection 最多一个 active（非 RESOLVED）review task（5B）。用部分唯一索引
+# 在 DB 层强制；应用层再做幂等检查（见 ReviewTask 下方的 Index 定义）。
+
+
+class ReviewTask(TimestampMixin, Base):
+    """人工复核任务（5A）。AI 快照在创建时固化（ai_defects_snapshot），
+    之后任何数据变化都不影响已归档的原始判断。"""
+
+    __tablename__ = "review_tasks"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    review_task_id: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    inspection_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inspections.id"), index=True, nullable=False)
+
+    status: Mapped[ReviewTaskStatus] = mapped_column(
+        SAEnum(ReviewTaskStatus, native_enum=False), nullable=False, default=ReviewTaskStatus.PENDING
+    )
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100, comment="lower is processed first")
+    assigned_to: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, comment="optimistic lock")
+
+    # ---- AI snapshot（创建时固化，5A / 5F）----
+    ai_quality_result: Mapped[str] = mapped_column(String(16), nullable=False)
+    ai_defects_snapshot: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    ai_model_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    ai_rule_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ai_severity: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    # ---- denormalized 产品上下文（队列筛选，免 join）----
+    product_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    production_line: Mapped[str] = mapped_column(String(64), nullable=False)
+    station: Mapped[str] = mapped_column(String(64), nullable=False)
+    batch_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    inspection: Mapped[Inspection] = relationship()
+    decision: Mapped["ReviewDecision | None"] = relationship(back_populates="task", uselist=False)
+
+
+Index(
+    "uq_review_task_active_inspection",
+    ReviewTask.__table__.c.inspection_id,
+    unique=True,
+    sqlite_where=ReviewTask.status != "RESOLVED",
+    postgresql_where=ReviewTask.__table__.c.status != "RESOLVED",
+)
+
+
+class ReviewDecision(TimestampMixin, Base):
+    """人工决策记录（5A / 5F）。创建后不可修改；如需变更走 review_corrections 追加记录。"""
+
+    __tablename__ = "review_decisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    review_task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("review_tasks.id"), unique=True, nullable=False)
+    inspection_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inspections.id"), index=True, nullable=False)
+    reviewer: Mapped[str] = mapped_column(String(64), nullable=False)
+    ai_quality_result: Mapped[str] = mapped_column(String(16), nullable=False)
+    ai_defects_snapshot: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    human_decision: Mapped[HumanDecision] = mapped_column(SAEnum(HumanDecision, native_enum=False), nullable=False)
+    human_label: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    final_quality_result: Mapped[QualityResult] = mapped_column(SAEnum(QualityResult, native_enum=False), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    task: Mapped[ReviewTask] = relationship(back_populates="decision")
+    corrections: Mapped[list["ReviewCorrection"]] = relationship(back_populates="decision")
+
+
+class ReviewCorrection(TimestampMixin, Base):
+    """审计修订记录（5F）：对已 RESOLVED 决策的追加修正，不覆盖原记录。"""
+
+    __tablename__ = "review_corrections"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    review_decision_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("review_decisions.id"), index=True, nullable=False)
+    reviewer: Mapped[str] = mapped_column(String(64), nullable=False)
+    field_changed: Mapped[str] = mapped_column(String(64), nullable=False)
+    old_value: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    new_value: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    decision: Mapped[ReviewDecision] = relationship(back_populates="corrections")

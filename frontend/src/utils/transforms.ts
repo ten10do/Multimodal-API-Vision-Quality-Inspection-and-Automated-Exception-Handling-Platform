@@ -2,7 +2,16 @@
 // The dashboard derives every number from these functions so the header
 // cards, charts and lists can never disagree with each other.
 
-import type { Inspection, InspectionEvent, QualityResult, RealtimeStatus } from "../types";
+import type {
+  HumanDecision,
+  Inspection,
+  InspectionEvent,
+  QualityResult,
+  RealtimeStatus,
+  ReviewEvent,
+  ReviewTask,
+  WsEvent,
+} from "../types";
 
 export interface OverviewStats {
   totalInspected: number; // completed + system failed (all processed)
@@ -141,7 +150,7 @@ export function latencySeries(inspections: Inspection[]): LatencyPoint[] {
 }
 
 /** WS event -> InspectionEvent with validation (4K: parsing + dedup-ready). */
-export function parseWsEvent(raw: unknown): InspectionEvent | null {
+export function parseInspectionEvent(raw: unknown): InspectionEvent | null {
   if (typeof raw !== "object" || raw === null) return null;
   const e = raw as Record<string, unknown>;
   if (typeof e.event_type !== "string") return null;
@@ -168,16 +177,100 @@ export function parseWsEvent(raw: unknown): InspectionEvent | null {
   };
 }
 
+/** WS event -> ReviewEvent with validation (5I). */
+export function parseReviewEvent(raw: unknown): ReviewEvent | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const e = raw as Record<string, unknown>;
+  if (typeof e.event_type !== "string") return null;
+  if (!["review.created", "review.claimed", "review.resolved"].includes(e.event_type)) return null;
+  if (typeof e.review_task_id !== "string") return null;
+  const status = e.status === "IN_REVIEW" || e.status === "RESOLVED" ? e.status : "PENDING";
+  return {
+    event_id: typeof e.event_id === "string" ? e.event_id : `evt-${e.review_task_id}`,
+    event_type: e.event_type as ReviewEvent["event_type"],
+    timestamp: typeof e.timestamp === "string" ? e.timestamp : new Date().toISOString(),
+    review_task_id: e.review_task_id,
+    inspection_id: typeof e.inspection_id === "string" ? e.inspection_id : "",
+    product_id: typeof e.product_id === "string" ? e.product_id : "",
+    status,
+    priority: typeof e.priority === "number" ? e.priority : null,
+    assigned_to: typeof e.assigned_to === "string" ? e.assigned_to : null,
+    reviewer: typeof e.reviewer === "string" ? e.reviewer : null,
+    human_decision:
+      e.human_decision === "PASS" || e.human_decision === "CONFIRM_DEFECT" || e.human_decision === "CORRECT_DEFECT" || e.human_decision === "OTHER_DEFECT"
+        ? e.human_decision
+        : null,
+    final_quality_result: e.final_quality_result === "PASS" || e.final_quality_result === "FAIL"
+      ? e.final_quality_result
+      : null,
+    top_defect_class: typeof e.top_defect_class === "string" ? e.top_defect_class : null,
+    top_confidence: typeof e.top_confidence === "number" ? e.top_confidence : null,
+    severity: typeof e.severity === "string" ? e.severity : null,
+    model_version: typeof e.model_version === "string" ? e.model_version : null,
+    image_url: typeof e.image_url === "string" ? e.image_url : null,
+  };
+}
+
+/** Unified WS parser: returns either an inspection or a review event. */
+export function parseWsEvent(raw: unknown): WsEvent | null {
+  return parseInspectionEvent(raw) ?? parseReviewEvent(raw);
+}
+
 /** Bounded live list (4H): keep the latest N events, dropping the oldest. */
 export function pushBounded<T>(list: T[], item: T, max: number): T[] {
   const next = [...list, item];
   return next.length > max ? next.slice(next.length - max) : next;
 }
 
-/** Deduplicate by inspection_id + event_type (4K). */
-export function pushDeduped(list: InspectionEvent[], item: InspectionEvent, max: number): InspectionEvent[] {
-  const filtered = list.filter(
-    (e) => !(e.inspection_id === item.inspection_id && e.event_type === item.event_type),
-  );
+/** Deduplicate by entity key + event_type (4K / 5I). */
+export function eventKey(e: WsEvent): string {
+  const id = "review_task_id" in e ? e.review_task_id : e.inspection_id;
+  return `${id}:${e.event_type}`;
+}
+
+export function pushDeduped(list: WsEvent[], item: WsEvent, max: number): WsEvent[] {
+  const key = eventKey(item);
+  const filtered = list.filter((e) => eventKey(e) !== key);
   return pushBounded(filtered, item, max);
+}
+
+// ---- Phase 5 review helpers ----
+
+export const REVIEW_FINAL_BY_DECISION: Record<HumanDecision, QualityResult> = {
+  PASS: "PASS",
+  CONFIRM_DEFECT: "FAIL",
+  CORRECT_DEFECT: "FAIL",
+  OTHER_DEFECT: "FAIL",
+};
+
+/** Waiting time of a task in seconds (created_at -> now, or until claimed/resolved). */
+export function reviewWaitSeconds(task: ReviewTask, now: number = Date.now()): number {
+  const start = new Date(task.created_at).getTime();
+  const end = task.resolved_at
+    ? new Date(task.resolved_at).getTime()
+    : task.claimed_at
+      ? new Date(task.claimed_at).getTime()
+      : now;
+  return Math.max(0, Math.floor((end - start) / 1000));
+}
+
+/** Human decision validation (5E): confirm/correct/other require a label. */
+export function validateReviewDecision(
+  decision: HumanDecision,
+  label: string | null,
+): string | null {
+  if (decision === "CONFIRM_DEFECT" || decision === "CORRECT_DEFECT" || decision === "OTHER_DEFECT") {
+    if (!label || label.trim() === "") {
+      return `${decision} 需要填写缺陷类别（human_label）`;
+    }
+  }
+  return null;
+}
+
+export function topDefect(task: ReviewTask): { name: string; confidence: number } | null {
+  const best = task.ai_defects_snapshot.reduce<(typeof task.ai_defects_snapshot)[number] | null>(
+    (acc, d) => (acc === null || d.confidence > acc.confidence ? d : acc),
+    null,
+  );
+  return best ? { name: best.class_name, confidence: best.confidence } : null;
 }

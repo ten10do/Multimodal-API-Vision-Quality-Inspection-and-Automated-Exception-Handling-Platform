@@ -36,3 +36,21 @@ export function useProductHistory(productId: string | null) {
     retry: 1,
   });
 }
+
+export function useReviews(filters: Record<string, unknown> = {}, refreshMs?: number) {
+  return useQuery({
+    queryKey: ["reviews", filters],
+    queryFn: () => api.listReviews(filters),
+    refetchInterval: refreshMs,
+    retry: 1,
+  });
+}
+
+export function useReviewMetrics(refreshMs?: number) {
+  return useQuery({
+    queryKey: ["reviews-metrics"],
+    queryFn: api.reviewMetrics,
+    refetchInterval: refreshMs,
+    retry: 1,
+  });
+}

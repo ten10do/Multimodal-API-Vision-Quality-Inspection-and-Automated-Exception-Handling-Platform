@@ -3,12 +3,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { OverviewPage } from "./features/overview/OverviewPage";
 import { LivePage } from "./features/live/LivePage";
 import { TracePage } from "./features/trace/TracePage";
+import { ReviewQueuePage } from "./features/review/ReviewQueuePage";
 
-type Tab = "overview" | "live" | "trace";
+type Tab = "overview" | "live" | "review" | "trace";
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: "overview", label: "Production Overview" },
   { key: "live", label: "Live Inspection" },
+  { key: "review", label: "Review Queue" },
   { key: "trace", label: "Quality Traceability" },
 ];
 
@@ -36,6 +38,7 @@ function Dashboard() {
       <main className="main">
         {tab === "overview" ? <OverviewPage /> : null}
         {tab === "live" ? <LivePage /> : null}
+        {tab === "review" ? <ReviewQueuePage /> : null}
         {tab === "trace" ? <TracePage /> : null}
       </main>
     </div>

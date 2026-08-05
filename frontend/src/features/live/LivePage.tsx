@@ -3,6 +3,7 @@ import { useInspectionSocket } from "../../hooks/useInspectionSocket";
 import { useRealtimeStatus, useRecentInspections } from "../../hooks/queries";
 import { StatusBadge } from "../../components/StatusBadge";
 import { ErrorState, LoadingState } from "../../components/StateViews";
+import type { InspectionEvent } from "../../types";
 
 export function LivePage() {
   const statusQ = useRealtimeStatus(2000);
@@ -15,6 +16,7 @@ export function LivePage() {
   }, [recentQ]);
 
   const { events, state } = useInspectionSocket(reconcile);
+  const inspectionEvents = events.filter((e): e is InspectionEvent => e.event_type.startsWith("inspection."));
 
   return (
     <div className="page">
@@ -27,8 +29,8 @@ export function LivePage() {
       </div>
 
       <section className="panel">
-        <h3>Live Inspections（最近 {Math.max(events.length, 1)} / 100）</h3>
-        {events.length === 0 ? (
+        <h3>Live Inspections（最近 {Math.max(inspectionEvents.length, 1)} / 100）</h3>
+        {inspectionEvents.length === 0 ? (
           <div className="state-block empty">等待实时事件…（启动 Simulator 后自动刷新）</div>
         ) : (
           <table className="table">
@@ -45,7 +47,7 @@ export function LivePage() {
               </tr>
             </thead>
             <tbody>
-              {events.map((e) => (
+              {inspectionEvents.map((e) => (
                 <tr key={`${e.inspection_id}-${e.event_type}`}>
                   <td>
                     <StatusBadge

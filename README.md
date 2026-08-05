@@ -19,7 +19,8 @@ PyTorch / YOLOv8 / PatchCore / PaddleOCR / FastAPI / SQLAlchemy / WebSocket / Re
 - [x] Phase 2 Backend MVP（FastAPI + PostgreSQL + Rule Engine + Inference HTTP API，见本文件与 docs）
 - [x] Phase 3 Realtime Pipeline（Camera Simulator + Orchestrator + WebSocket，见 [docs/05-phase3-benchmark.md](docs/05-phase3-benchmark.md)）
 - [x] Phase 4 Frontend Dashboard（React + Vite + TypeScript + ECharts，见 [docs/06-phase4-dashboard.md](docs/06-phase4-dashboard.md)）
-- [ ] Phase 5 Dashboard Interactive
+- [x] Phase 5 Human-in-the-loop Review（人工复核闭环，见 [docs/07-phase5-review.md](docs/07-phase5-review.md)）
+- [ ] Phase 6 Dashboard Interactive
 
 ## 本地启动（Phase 2）
 

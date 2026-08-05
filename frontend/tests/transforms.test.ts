@@ -1,16 +1,22 @@
 import { describe, expect, it } from "vitest";
 import type { Inspection, RealtimeStatus } from "../src/types";
 import {
+  REVIEW_FINAL_BY_DECISION,
   assertQualityInvariant,
   assertTotalInspected,
   defectTypeDistribution,
   overviewStats,
+  parseInspectionEvent,
+  parseReviewEvent,
   parseWsEvent,
   pushBounded,
   pushDeduped,
   qualityDistribution,
   qualityTrend,
+  reviewWaitSeconds,
+  validateReviewDecision,
 } from "../src/utils/transforms";
+import type { ReviewTask } from "../src/types";
 
 const status = (patch: Partial<RealtimeStatus>): RealtimeStatus => ({
   completed_total: 8,
@@ -176,7 +182,7 @@ describe("event dedup (4K)", () => {
 
 describe("parseWsEvent", () => {
   it("parses a valid completed event", () => {
-    const ev = parseWsEvent({
+    const ev = parseInspectionEvent({
       event_type: "inspection.completed",
       timestamp: "2026-08-04T10:00:00Z",
       product_id: "p1",
@@ -203,7 +209,7 @@ describe("parseWsEvent", () => {
   });
 
   it("maps process_status FAILED without a quality result", () => {
-    const ev = parseWsEvent({
+    const ev = parseInspectionEvent({
       event_type: "inspection.failed",
       inspection_id: "i2",
       product_id: "p2",
@@ -211,5 +217,71 @@ describe("parseWsEvent", () => {
     });
     expect(ev?.process_status).toBe("FAILED");
     expect(ev?.quality_result).toBeNull();
+  });
+
+  it("parses review lifecycle events (5I)", () => {
+    const created = parseWsEvent({
+      event_type: "review.created",
+      review_task_id: "rt-1",
+      inspection_id: "i9",
+      product_id: "p9",
+      status: "PENDING",
+      top_defect_class: "crazing",
+      top_confidence: 0.42,
+    });
+    expect(created?.event_type).toBe("review.created");
+    if (created && created.event_type === "review.created") {
+      expect(created.review_task_id).toBe("rt-1");
+      expect(created.status).toBe("PENDING");
+    }
+    const resolved = parseReviewEvent({
+      event_type: "review.resolved",
+      review_task_id: "rt-1",
+      status: "RESOLVED",
+      human_decision: "CONFIRM_DEFECT",
+      final_quality_result: "FAIL",
+    });
+    expect(resolved?.status).toBe("RESOLVED");
+    expect(resolved?.human_decision).toBe("CONFIRM_DEFECT");
+    expect(resolved?.final_quality_result).toBe("FAIL");
+  });
+
+  it("review decision validation and final result mapping (5E)", () => {
+    expect(validateReviewDecision("PASS", null)).toBeNull();
+    expect(validateReviewDecision("CONFIRM_DEFECT", "")).not.toBeNull();
+    expect(validateReviewDecision("CORRECT_DEFECT", "scratches")).toBeNull();
+    expect(REVIEW_FINAL_BY_DECISION.PASS).toBe("PASS");
+    expect(REVIEW_FINAL_BY_DECISION.CONFIRM_DEFECT).toBe("FAIL");
+    expect(REVIEW_FINAL_BY_DECISION.CORRECT_DEFECT).toBe("FAIL");
+    expect(REVIEW_FINAL_BY_DECISION.OTHER_DEFECT).toBe("FAIL");
+  });
+
+  it("review waiting time respects claimed/resolved anchors", () => {
+    const base = Date.parse("2026-08-05T10:00:00Z");
+    const task: ReviewTask = {
+      review_task_id: "rt-1",
+      inspection_id: "i1",
+      inspection: null,
+      status: "RESOLVED",
+      priority: 100,
+      assigned_to: "alice",
+      claimed_at: new Date(base + 5000).toISOString(),
+      resolved_at: new Date(base + 65000).toISOString(),
+      version: 2,
+      ai_quality_result: "REVIEW",
+      ai_defects_snapshot: [],
+      ai_model_version: "v1",
+      ai_rule_version: 1,
+      ai_severity: "medium",
+      product_id: "p1",
+      production_line: "l",
+      station: "s",
+      batch_id: null,
+      image_url: null,
+      decision: null,
+      created_at: new Date(base).toISOString(),
+      updated_at: new Date(base).toISOString(),
+    };
+    expect(reviewWaitSeconds(task, base + 999999)).toBe(65);
   });
 });
