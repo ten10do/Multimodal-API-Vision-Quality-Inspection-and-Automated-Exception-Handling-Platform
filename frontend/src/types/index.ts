@@ -46,14 +46,24 @@ export interface Inspection {
 }
 
 export interface RealtimeStatus {
-  captured_total: number;
-  queued_current: number;
-  processing_current: number;
+  // quality / persisted facts (DB-owned, single coherent snapshot)
   completed_total: number;
   failed_total: number;
   pass_total: number;
   review_total: number;
   fail_total: number;
+  total_inspected: number;
+  yield_rate: number | null;
+  // runtime telemetry (pipeline view, refreshed independently)
+  captured_total: number;
+  queued_current: number;
+  processing_current: number;
+  queue_depth: number;
+  throughput: number;
+  // freshness
+  snapshot_at: string;
+  telemetry_at: string | null;
+  // remaining
   queue_peak_depth: number;
   simulator_running: boolean;
   simulator_interval_ms: number | null;

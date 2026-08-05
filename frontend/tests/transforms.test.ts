@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Inspection, RealtimeStatus } from "../src/types";
 import {
   assertQualityInvariant,
+  assertTotalInspected,
   defectTypeDistribution,
   overviewStats,
   parseWsEvent,
@@ -12,14 +13,20 @@ import {
 } from "../src/utils/transforms";
 
 const status = (patch: Partial<RealtimeStatus>): RealtimeStatus => ({
-  captured_total: 10,
-  queued_current: 0,
-  processing_current: 0,
   completed_total: 8,
   failed_total: 2,
   pass_total: 5,
   review_total: 2,
   fail_total: 1,
+  total_inspected: 10,
+  yield_rate: 5 / 8,
+  captured_total: 10,
+  queued_current: 0,
+  processing_current: 0,
+  queue_depth: 0,
+  throughput: 3.5,
+  snapshot_at: "2026-08-05T00:00:00Z",
+  telemetry_at: "2026-08-05T00:00:01Z",
   queue_peak_depth: 4,
   simulator_running: true,
   simulator_interval_ms: 200,
@@ -70,10 +77,37 @@ describe("overviewStats", () => {
   });
 });
 
-describe("metric invariants (4G)", () => {
+describe("Gate 1: quality snapshot semantics", () => {
+  it("totalInspected == completed + failed in every snapshot", () => {
+    expect(assertTotalInspected(status({}))).toBe(true);
+    expect(assertTotalInspected(status({ total_inspected: 11 }))).toBe(false);
+  });
+
   it("PASS + REVIEW + FAIL == COMPLETED", () => {
     expect(assertQualityInvariant(status({}))).toBe(true);
     expect(assertQualityInvariant(status({ fail_total: 2 }))).toBe(false);
+  });
+
+  it("regression: captured lagging the DB snapshot must not corrupt quality facts", () => {
+    // telemetry reports captured=2800 while the DB already has 2840 completed
+    // (the exact 'Total Inspected=2840 vs PASS+REVIEW+FAIL=2843' class of bug).
+    const st = status({
+      captured_total: 2800,
+      completed_total: 2840,
+      failed_total: 0,
+      total_inspected: 2840,
+      pass_total: 947,
+      review_total: 946,
+      fail_total: 947,
+      yield_rate: 947 / 2840,
+    });
+    const s = overviewStats(st);
+    expect(s.totalInspected).toBe(2840);
+    expect(s.captured).toBe(2800);
+    expect(s.pass + s.review + s.fail).toBe(s.completed);
+    expect(assertTotalInspected(st)).toBe(true);
+    // captured is a separate pipeline metric, never folded into total
+    expect(s.captured).not.toBe(s.totalInspected);
   });
 });
 

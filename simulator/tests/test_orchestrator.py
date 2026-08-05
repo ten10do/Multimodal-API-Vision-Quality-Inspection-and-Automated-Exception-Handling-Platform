@@ -209,15 +209,18 @@ async def test_conservation_law_during_run(tmp_path):
         if sim.captured_count > 0 and not task.done():
             orch.metrics.captured_total = sim.captured_count
             orch.metrics.update_flow(orch.queue.qsize(), orch.processing_count)
-            # sampling is not atomic: the simulator increments its counter
-            # just before the queue put lands, so at most one in-flight item
-            # can be momentarily uncounted; the invariant is exact at
-            # quiescent points and in the drained state.
+            # sampling is not atomic; two bounded windows can skew by +/-1:
+            #  +1 the simulator increments its counter just before the queue
+            #     put lands (produced but not yet queued)
+            #  -1 a worker dequeued but has not yet incremented processing
+            #     (the item is counted in both queued and processing reads)
+            # the invariant is exact at quiescent points and in the drained
+            # state, which is asserted below.
             skew = orch.metrics.captured_total - (
                 orch.metrics.queued_current + orch.metrics.processing_current
                 + orch.metrics.completed_total + orch.metrics.failed_total
             )
-            assert 0 <= skew <= 1, f"running conservation broken, skew={skew}"
+            assert -1 <= skew <= 1, f"running conservation broken, skew={skew}"
             saw_running = True
     await task
 

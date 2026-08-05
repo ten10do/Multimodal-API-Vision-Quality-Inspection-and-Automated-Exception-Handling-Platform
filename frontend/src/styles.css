@@ -417,3 +417,27 @@ body {
   stroke: rgba(0, 0, 0, 0.85);
   stroke-width: 3px;
 }
+
+/* Gate 1: freshness bar + chart window notes */
+.freshness-bar {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.freshness-note {
+  color: var(--review);
+}
+
+.win-note {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}

@@ -8,9 +8,12 @@ pushed by the orchestrator (simulator side).
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from collections import deque
 from statistics import median
+
+logger = logging.getLogger(__name__)
 
 MAX_LATENCY_SAMPLES = 1000
 THROUGHPUT_WINDOW_SECONDS = 60.0
@@ -37,6 +40,7 @@ class RealtimeMetrics:
         self._inference_samples: deque[float] = deque(maxlen=MAX_LATENCY_SAMPLES)
         self._completions: deque[float] = deque()
         self._started_at = time.monotonic()
+        self._telemetry_updated_at: float | None = None
         # telemetry reported by the orchestrator (simulator side)
         self._telemetry: dict = {
             "captured_total": 0,
@@ -70,6 +74,7 @@ class RealtimeMetrics:
     async def update_telemetry(self, telemetry: dict) -> None:
         async with self._lock:
             self._telemetry.update(telemetry)
+            self._telemetry_updated_at = time.monotonic()
 
     async def reset(self) -> None:
         async with self._lock:
@@ -94,6 +99,8 @@ class RealtimeMetrics:
             })
 
     async def snapshot(self) -> dict:
+        from datetime import datetime, timezone
+
         async with self._lock:
             now = time.monotonic()
             samples = list(self._latency_samples)
@@ -101,22 +108,49 @@ class RealtimeMetrics:
             recent = [t for t in self._completions if now - t <= THROUGHPUT_WINDOW_SECONDS]
             throughput = len(recent) / THROUGHPUT_WINDOW_SECONDS
             uptime = now - self._started_at
+            snapshot_at = datetime.now(timezone.utc).isoformat()
+            telemetry_at = (
+                datetime.fromtimestamp(self._telemetry_updated_at, tz=timezone.utc).isoformat()
+                if self._telemetry_updated_at is not None
+                else None
+            )
+
+            # Quality / persisted facts (DB-owned, single coherent snapshot).
+            # Invariant: pass + review + fail == completed; total == completed + failed.
+            completed = self._processed
+            failed = self._failed
+            passed = self._pass_count
+            reviewed = self._review_count
+            failed_q = self._fail_count
+            if passed + reviewed + failed_q != completed:
+                logger.error(
+                    "quality invariant broken: pass=%d review=%d fail=%d completed=%d",
+                    passed, reviewed, failed_q, completed,
+                )
+
             out = {
-                # orchestrator-side (produced / in-flight)
+                # ---- quality / persisted facts ----
+                "completed_total": completed,
+                "failed_total": failed,
+                "pass_total": passed,
+                "review_total": reviewed,
+                "fail_total": failed_q,
+                "total_inspected": completed + failed,
+                "yield_rate": round(passed / completed, 6) if completed else None,
+                # ---- runtime telemetry (pipeline view) ----
                 "captured_total": self._telemetry["captured_total"],
                 "queued_current": self._telemetry["queued_current"],
                 "processing_current": self._telemetry["processing_current"],
-                # backend-side (terminal)
-                "completed_total": self._processed,
-                "failed_total": self._failed,
-                "pass_total": self._pass_count,
-                "review_total": self._review_count,
-                "fail_total": self._fail_count,
+                "queue_depth": self._telemetry["queued_current"],
+                "throughput": round(throughput, 3),
                 "queue_peak_depth": self._telemetry["queue_peak_depth"],
                 "simulator_running": self._telemetry["simulator_running"],
                 "simulator_interval_ms": self._telemetry["simulator_interval_ms"],
                 "worker_count": self._telemetry["worker_count"],
                 "queue_size": self._telemetry["queue_size"],
+                # ---- timestamps / freshness ----
+                "snapshot_at": snapshot_at,
+                "telemetry_at": telemetry_at,
                 "current_throughput": round(throughput, 3),
                 "average_processing_latency_ms": round(sum(samples) / len(samples), 2) if samples else None,
                 "p50_latency_ms": round(median(samples), 2) if samples else None,

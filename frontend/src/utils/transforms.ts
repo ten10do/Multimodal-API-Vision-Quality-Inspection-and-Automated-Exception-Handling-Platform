@@ -12,14 +12,17 @@ export interface OverviewStats {
   review: number;
   fail: number;
   yieldRate: number | null; // PASS / COMPLETED; null when no completions
-  throughput: number;
+  // runtime telemetry (separate, may lag the DB snapshot)
+  captured: number;
   queueDepth: number;
   processing: number;
+  throughput: number;
   avgLatencyMs: number | null;
   p95LatencyMs: number | null;
   modelVersion: string | null;
-  captured: number;
-  simulatorRunning: boolean;
+  // freshness
+  snapshotAt: string | null;
+  telemetryAt: string | null;
 }
 
 export function overviewStats(status: RealtimeStatus): OverviewStats {
@@ -27,6 +30,7 @@ export function overviewStats(status: RealtimeStatus): OverviewStats {
   const pass = status.pass_total;
   const yieldRate = completed > 0 ? pass / completed : null;
   return {
+    // DB-owned quality facts; never mix in telemetry values here (Gate 1)
     totalInspected: status.completed_total + status.failed_total,
     completed,
     systemFailed: status.failed_total,
@@ -34,20 +38,27 @@ export function overviewStats(status: RealtimeStatus): OverviewStats {
     review: status.review_total,
     fail: status.fail_total,
     yieldRate,
-    throughput: status.current_throughput,
+    // runtime telemetry (pipeline view, refreshed independently)
+    captured: status.captured_total,
     queueDepth: status.queued_current,
     processing: status.processing_current,
+    throughput: status.throughput ?? status.current_throughput,
     avgLatencyMs: status.average_processing_latency_ms,
     p95LatencyMs: status.p95_latency_ms,
-    modelVersion: status.simulator_running ? null : null, // patched by caller when known
-    captured: status.captured_total,
-    simulatorRunning: status.simulator_running,
+    modelVersion: null,
+    snapshotAt: status.snapshot_at ?? null,
+    telemetryAt: status.telemetry_at ?? null,
   };
 }
 
-/** The dashboard invariant: PASS + REVIEW + FAIL == COMPLETED (4G). */
+/** The dashboard invariant (Gate 1): PASS + REVIEW + FAIL == COMPLETED. */
 export function assertQualityInvariant(status: RealtimeStatus): boolean {
   return status.pass_total + status.review_total + status.fail_total === status.completed_total;
+}
+
+/** total_inspected must equal completed + failed in every snapshot (Gate 1). */
+export function assertTotalInspected(status: RealtimeStatus): boolean {
+  return status.total_inspected === status.completed_total + status.failed_total;
 }
 
 export type QualityKey = QualityResult;

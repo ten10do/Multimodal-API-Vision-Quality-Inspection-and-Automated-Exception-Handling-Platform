@@ -32,17 +32,32 @@ export function OverviewPage() {
 
   const yieldPct = stats.yieldRate === null ? "—" : `${(stats.yieldRate * 100).toFixed(1)}%`;
   const modelVersion = inspections.find((i) => i.model_version)?.model_version ?? "—";
+  const fmtTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleTimeString("zh-CN", { hour12: false }) : "—";
 
   return (
     <div className="page">
+      <div className="freshness-bar">
+        <span>质量快照 snapshot_at：{fmtTime(stats.snapshotAt)}</span>
+        <span>管线采集 telemetry_at：{fmtTime(stats.telemetryAt)}</span>
+        <span className="freshness-note">两类指标独立刷新；captured 为实时采集，不参与质量守恒</span>
+      </div>
+
       <section className="metric-grid">
-        <MetricCard label="Total Inspected" value={stats.totalInspected} hint={`captured ${stats.captured}`} />
+        {/* quality / persisted facts: single coherent snapshot */}
+        <MetricCard
+          label="Total Inspected"
+          value={stats.totalInspected}
+          hint={`= completed ${stats.completed} + failed ${stats.systemFailed}`}
+        />
         <MetricCard label="Completed" value={stats.completed} />
         <MetricCard label="System Failed" value={stats.systemFailed} tone="danger" hint="系统处理失败，不计入良率" />
         <MetricCard label="PASS" value={stats.pass} tone="success" />
         <MetricCard label="REVIEW" value={stats.review} tone="warn" />
         <MetricCard label="FAIL" value={stats.fail} tone="danger" hint="产品质量不合格" />
         <MetricCard label="Yield Rate" value={yieldPct} hint="PASS / COMPLETED" />
+        {/* runtime telemetry (independent freshness) */}
+        <MetricCard label="Captured (Pipeline)" value={stats.captured} hint="实时采集，独立于质量快照" />
         <MetricCard label="Throughput" value={`${stats.throughput.toFixed(2)}/s`} />
         <MetricCard label="Queue Depth" value={stats.queueDepth} hint={`processing ${stats.processing}`} />
         <MetricCard
@@ -55,7 +70,7 @@ export function OverviewPage() {
 
       <section className="chart-grid">
         <div className="panel">
-          <h3>Quality Result Distribution</h3>
+          <h3>Quality Result Distribution <span className="win-note">(最近 {inspections.length} 次)</span></h3>
           {inspections.length === 0 ? (
             <EmptyState message="暂无质检数据" />
           ) : (
@@ -79,7 +94,7 @@ export function OverviewPage() {
           )}
         </div>
         <div className="panel">
-          <h3>Defect Type Distribution</h3>
+          <h3>Defect Type Distribution <span className="win-note">(最近 {inspections.length} 次)</span></h3>
           {defects.length === 0 ? (
             <EmptyState message="暂无缺陷数据" />
           ) : (
@@ -93,7 +108,7 @@ export function OverviewPage() {
           )}
         </div>
         <div className="panel">
-          <h3>Quality Trend</h3>
+          <h3>Quality Trend <span className="win-note">(最近 {inspections.length} 次)</span></h3>
           {trend.length === 0 ? (
             <EmptyState message="暂无趋势数据" />
           ) : (
@@ -112,7 +127,7 @@ export function OverviewPage() {
           )}
         </div>
         <div className="panel">
-          <h3>Throughput / Latency Trend</h3>
+          <h3>Throughput / Latency Trend <span className="win-note">(最近 {inspections.length} 次)</span></h3>
           {latencies.length === 0 ? (
             <EmptyState message="暂无延迟数据" />
           ) : (
