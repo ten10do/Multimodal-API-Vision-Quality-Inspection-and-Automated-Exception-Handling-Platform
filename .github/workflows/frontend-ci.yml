@@ -31,13 +31,14 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: verify proxy-agents dist files (Gate 2)
-        run: node -e "
+        run: |
+          node -e "
           const fs = require('fs');
           const pkgs = ['http-proxy-agent', 'agent-base', 'https-proxy-agent'];
-          const missing = pkgs.filter(p => !fs.existsSync('node_modules/' + p + '/dist/index.js'));
+          const missing = pkgs.filter((p) => !fs.existsSync('node_modules/' + p + '/dist/index.js'));
           if (missing.length) { console.error('MISSING dist/index.js:', missing); process.exit(1); }
           console.log('proxy-agents dist OK:', pkgs.join(', '));
-        "
+          "
 
       - name: npm test
         run: npm test
