@@ -1,0 +1,46 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { InspectionEvent, WsConnectionState } from "../types";
+import { parseWsEvent, pushDeduped } from "../utils/transforms";
+import { DEFAULT_WS_URL, InspectionSocket } from "../ws/socket";
+
+export const MAX_LIVE_EVENTS = 100; // bounded live list (4H)
+
+export interface LiveInspectionState {
+  events: InspectionEvent[];
+  state: WsConnectionState;
+  reconnect: () => void;
+}
+
+/** Live WS subscription with bounded list, dedup, reconnect + reconciliation. */
+export function useInspectionSocket(onReconcile: () => void): LiveInspectionState {
+  const [events, setEvents] = useState<InspectionEvent[]>([]);
+  const [state, setState] = useState<WsConnectionState>("connecting");
+  const socketRef = useRef<InspectionSocket | null>(null);
+  const onReconcileRef = useRef(onReconcile);
+  onReconcileRef.current = onReconcile;
+
+  useEffect(() => {
+    const socket = new InspectionSocket(DEFAULT_WS_URL(), {
+      onMessage: (raw: unknown) => {
+        const ev = parseWsEvent(raw);
+        if (ev) setEvents((prev) => pushDeduped(prev, ev, MAX_LIVE_EVENTS));
+      },
+      onStateChange: (s: WsConnectionState) => {
+        setState(s);
+        if (s === "connected" || s === "reconnected") {
+          // reconciliation: REST is the source of truth (4F)
+          void onReconcileRef.current();
+        }
+      },
+    });
+    socketRef.current = socket;
+    socket.connect();
+    return () => socket.disconnect();
+  }, []);
+
+  const reconnect = useCallback(() => {
+    socketRef.current?.connect();
+  }, []);
+
+  return { events, state, reconnect };
+}

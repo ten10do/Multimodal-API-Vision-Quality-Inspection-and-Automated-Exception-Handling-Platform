@@ -76,10 +76,10 @@ async def test_orchestrator_success_flow(tmp_path):
     cfg = OrchestratorConfig(backend_url="http://test", workers=1, retry_max=0, telemetry_interval_seconds=999)
     orch = await run_orchestrator(httpx.MockTransport(ok_handler()), cfg, src, max_images=3)
     m = orch.metrics
-    assert m.total_captured == 3
-    assert m.total_processed == 3
-    assert m.total_failed == 0
-    assert m.review_count == 3
+    assert m.captured_total == 3
+    assert m.completed_total == 3
+    assert m.failed_total == 0
+    assert m.review_total == 3
     assert len(m.e2e_latencies) == 3
     assert len(m.inference_latencies) == 3
 
@@ -105,8 +105,8 @@ async def test_orchestrator_retry_then_success(tmp_path):
                              telemetry_interval_seconds=999)
     orch = await run_orchestrator(httpx.MockTransport(handler), cfg, src, max_images=1)
     assert calls["n"] == 3  # 2 failed attempts + 1 success
-    assert orch.metrics.total_processed == 1
-    assert orch.metrics.total_failed == 0
+    assert orch.metrics.completed_total == 1
+    assert orch.metrics.failed_total == 0
 
 
 @pytest.mark.asyncio
@@ -124,8 +124,8 @@ async def test_orchestrator_no_infinite_retry(tmp_path):
     cfg = OrchestratorConfig(backend_url="http://test", workers=1, retry_max=2, retry_base_ms=10,
                              telemetry_interval_seconds=999)
     orch = await run_orchestrator(httpx.MockTransport(handler), cfg, src, max_images=3)
-    assert orch.metrics.total_failed == 3
-    assert orch.metrics.total_processed == 0
+    assert orch.metrics.failed_total == 3
+    assert orch.metrics.completed_total == 0
     assert calls["n"] == 3 * 3  # 3 captures x (1 + 2 retries)
 
 
@@ -151,8 +151,8 @@ async def test_orchestrator_timeout_retry_idempotent(tmp_path):
                              telemetry_interval_seconds=999)
     orch = await run_orchestrator(httpx.MockTransport(handler), cfg, src, max_images=1)
     assert calls["n"] == 2
-    assert orch.metrics.total_processed == 1  # one logical inspection despite 2 HTTP calls
-    assert orch.metrics.fail_count == 1
+    assert orch.metrics.completed_total == 1  # one logical inspection despite 2 HTTP calls
+    assert orch.metrics.fail_total == 1
 
 
 @pytest.mark.asyncio
@@ -177,8 +177,56 @@ async def test_failed_persisted_inspection_not_counted_as_success(tmp_path):
                              telemetry_interval_seconds=999)
     orch = await run_orchestrator(httpx.MockTransport(handler), cfg, src, max_images=1)
     assert calls["n"] == 2  # 504 then idempotent replay, no further retry
-    assert orch.metrics.total_failed == 1
-    assert orch.metrics.total_processed == 0
+    assert orch.metrics.failed_total == 1
+    assert orch.metrics.completed_total == 0
+
+
+@pytest.mark.asyncio
+async def test_conservation_law_during_run(tmp_path):
+    """Running invariant captured == queued + processing + completed + failed
+    must hold at every sample point; drained invariant and the quality-sum
+    invariant must hold at the end."""
+    async def slow_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/realtime/telemetry"):
+            return httpx.Response(200, json={"status": "ok"})
+        await asyncio.sleep(0.05)  # slow consumer -> queue builds up
+        return httpx.Response(201, json={
+            "inspection_id": "insp-x", "product_id": "P", "status": "completed",
+            "quality_result": "REVIEW", "severity": "medium", "defects": [], "inference_latency_ms": 8.0,
+        })
+
+    src = make_src(tmp_path, 10)
+    cfg = OrchestratorConfig(backend_url="http://test", workers=1, retry_max=0,
+                             telemetry_interval_seconds=999, queue_size=5)
+    client = httpx.AsyncClient(transport=httpx.MockTransport(slow_handler), timeout=10)
+    orch = InspectionOrchestrator(cfg, client=client)
+    sim = CameraSimulator(SimulatorConfig(source_directory=str(src), interval_ms=5, loop=False), orch.queue)
+    task = asyncio.create_task(orch.run(sim, max_images=10))
+
+    saw_running = False
+    for _ in range(60):
+        await asyncio.sleep(0.05)
+        if sim.captured_count > 0 and not task.done():
+            orch.metrics.captured_total = sim.captured_count
+            orch.metrics.update_flow(orch.queue.qsize(), orch.processing_count)
+            # sampling is not atomic: the simulator increments its counter
+            # just before the queue put lands, so at most one in-flight item
+            # can be momentarily uncounted; the invariant is exact at
+            # quiescent points and in the drained state.
+            skew = orch.metrics.captured_total - (
+                orch.metrics.queued_current + orch.metrics.processing_current
+                + orch.metrics.completed_total + orch.metrics.failed_total
+            )
+            assert 0 <= skew <= 1, f"running conservation broken, skew={skew}"
+            saw_running = True
+    await task
+
+    m = orch.metrics
+    assert saw_running
+    assert m.captured_total == 10
+    assert m.captured_total == m.completed_total + m.failed_total, "drained conservation broken"
+    assert m.pass_total + m.review_total + m.fail_total == m.completed_total, "quality sum broken"
+    await client.aclose()
 
 
 @pytest.mark.asyncio
@@ -201,6 +249,6 @@ async def test_simulator_exhaustion_stops_pipeline(tmp_path):
     cfg = OrchestratorConfig(backend_url="http://test", workers=1, retry_max=0, telemetry_interval_seconds=999)
     orch = await run_orchestrator(httpx.MockTransport(ok_handler()), cfg, src, max_images=None)
     m = orch.metrics
-    assert m.total_captured == 2
-    assert m.total_processed == 2
-    assert m.total_failed == 0
+    assert m.captured_total == 2
+    assert m.completed_total == 2
+    assert m.failed_total == 0

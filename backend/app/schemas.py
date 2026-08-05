@@ -71,6 +71,7 @@ class InspectionOut(BaseModel):
     inspection_id: str
     product_id: str
     batch_id: str | None = None
+    image_url: str | None = None
     status: InspectionStatus
     quality_result: QualityResult | None
     severity: Severity | None

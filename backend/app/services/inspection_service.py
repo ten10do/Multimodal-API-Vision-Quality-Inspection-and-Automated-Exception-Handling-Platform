@@ -12,6 +12,7 @@ from ..enums import InspectionStatus, QualityResult
 from ..inference.client import InferenceClient
 from ..models import Defect, Inspection, Product, QualityRule
 from ..quality.engine import DefectInput, QualityRuleEngine
+from ..storage import get_storage
 from .contract_validation import validate_image_bytes
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,14 @@ class InspectionService:
 
         inspection_id = f"insp-{uuid.uuid4().hex[:12]}"
         product = await self._get_or_create_product(session, data)
+
+        # persist the raw image before inference: every inspection (completed
+        # or failed) keeps its image for traceability; storage failure is
+        # logged but never blocks the inspection flow.
+        try:
+            get_storage().save(inspection_id, data.image_bytes)
+        except OSError:
+            logger.exception("image save failed inspection=%s", inspection_id)
 
         inspection = Inspection(
             inspection_id=inspection_id,

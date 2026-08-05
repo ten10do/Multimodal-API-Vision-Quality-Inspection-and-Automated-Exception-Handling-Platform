@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     inference_timeout_seconds: float = 30.0
     max_upload_bytes: int = 10 * 1024 * 1024
 
+    storage_dir: str = "storage-images"
     default_rule_version: int = 1
 
 

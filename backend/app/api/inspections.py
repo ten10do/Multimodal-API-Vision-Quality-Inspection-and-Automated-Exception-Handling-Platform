@@ -4,7 +4,8 @@ import logging
 import time
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,6 +17,7 @@ from ..models import Inspection
 from ..schemas import InspectionDetail
 from ..services.contract_validation import InvalidImageError
 from ..services.inspection_service import CreateInspectionInput, InspectionService, InspectionServiceError
+from ..storage import get_storage
 from ..ws import schedule_broadcast
 from .serializers import to_inspection_detail
 
@@ -85,12 +87,78 @@ async def create_inspection(
     return detail
 
 
+@router.get("/inspections", response_model=list[InspectionDetail])
+async def list_inspections(
+    product_id: str | None = None,
+    inspection_id: str | None = None,
+    batch_id: str | None = None,
+    quality_result: str | None = None,
+    status: str | None = None,
+    defect_type: str | None = None,
+    production_line: str | None = None,
+    station: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_session),
+) -> list[InspectionDetail]:
+    """Search/traceability endpoint (4E). Filters are applied server-side."""
+    from datetime import datetime
+
+    from ..enums import InspectionStatus, QualityResult as QR
+    from ..models import Defect, Product
+
+    stmt = (
+        select(Inspection)
+        .join(Inspection.product)
+        .options(*_EAGER)
+        .order_by(Inspection.created_at.desc())
+    )
+    if product_id:
+        stmt = stmt.where(Product.product_id == product_id)
+    if inspection_id:
+        stmt = stmt.where(Inspection.inspection_id == inspection_id)
+    if batch_id:
+        stmt = stmt.where(Inspection.batch_id == batch_id)
+    if quality_result:
+        stmt = stmt.where(Inspection.quality_result == QR(quality_result))
+    if status:
+        stmt = stmt.where(Inspection.status == InspectionStatus(status))
+    if defect_type:
+        stmt = stmt.where(Inspection.defects.any(Defect.class_name == defect_type))
+    if production_line:
+        stmt = stmt.where(Product.production_line == production_line)
+    if station:
+        stmt = stmt.where(Product.station == station)
+    if date_from:
+        stmt = stmt.where(Inspection.created_at >= datetime.fromisoformat(date_from))
+    if date_to:
+        stmt = stmt.where(Inspection.created_at <= datetime.fromisoformat(date_to))
+    stmt = stmt.limit(limit).offset(offset)
+    result = await session.execute(stmt)
+    return [to_inspection_detail(i) for i in result.scalars()]
+
+
 @router.get("/inspections/{inspection_id}", response_model=InspectionDetail)
 async def get_inspection(inspection_id: str, session: AsyncSession = Depends(get_session)) -> InspectionDetail:
     inspection = await _load_detail(session, inspection_id)
     if inspection is None:
         raise HTTPException(status_code=404, detail=_err("not_found", "inspection not found"))
     return to_inspection_detail(inspection)
+
+
+@router.get("/inspections/{inspection_id}/image")
+async def get_inspection_image(inspection_id: str, session: AsyncSession = Depends(get_session)) -> FileResponse:
+    """Serve the raw captured image for an inspection (4D). The dashboard
+    draws Bounding Boxes from the Vision Contract; no server-side annotation."""
+    inspection = await _load_detail(session, inspection_id)
+    if inspection is None:
+        raise HTTPException(status_code=404, detail=_err("not_found", "inspection not found"))
+    path = get_storage().path_for(inspection_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail=_err("image_missing", "image not stored for this inspection"))
+    return FileResponse(path, media_type="image/jpeg")
 
 
 async def _load_detail(session: AsyncSession, inspection_id: str) -> Inspection | None:

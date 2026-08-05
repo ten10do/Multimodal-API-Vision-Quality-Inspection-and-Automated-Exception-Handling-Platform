@@ -46,3 +46,13 @@ runs/
 *.tflite
 mlruns/
 
+
+# inspection image storage (local filesystem provider)
+storage-images/
+
+# Frontend build output
+frontend/dist/
+
+# Broken or transient node_modules trees (left over from corrupted installs)
+frontend/node_modules.broken/
+frontend/node_modules.broken2/

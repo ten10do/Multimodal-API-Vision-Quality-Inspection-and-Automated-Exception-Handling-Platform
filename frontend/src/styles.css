@@ -1,0 +1,419 @@
+/* Industrial control / operations dashboard style (4J): dense, professional,
+   semantic status colors, no decorative gradients or animation noise. */
+
+:root {
+  --bg: #0b1220;
+  --panel: #111a2e;
+  --panel-2: #16213a;
+  --border: #22304d;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --pass: #22c55e;
+  --review: #eab308;
+  --fail: #ef4444;
+  --system: #64748b;
+  --accent: #38bdf8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 13px;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  background: var(--accent);
+  color: #04121f;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.brand-title {
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tab.active {
+  color: var(--text);
+  background: var(--panel-2);
+  border-color: var(--border);
+}
+
+.main {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.metric-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-hint {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.tone-success .metric-value {
+  color: var(--pass);
+}
+.tone-danger .metric-value {
+  color: var(--fail);
+}
+.tone-warn .metric-value {
+  color: var(--review);
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 12px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.panel h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.badge-pass {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--pass);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.badge-review {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--review);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+}
+
+.badge-fail {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--fail);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+/* SYSTEM FAILED is visually distinct from product FAIL (4C) */
+.badge-system-failed {
+  background: rgba(100, 116, 139, 0.2);
+  color: #cbd5e1;
+  border: 1px dashed #64748b;
+}
+
+.badge-pending {
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.sev {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.table.clickable tbody tr {
+  cursor: pointer;
+}
+
+.table.clickable tbody tr:hover {
+  background: var(--panel-2);
+}
+
+.mono {
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+}
+
+.err {
+  color: var(--fail);
+}
+
+.ws-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.ws-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.ws-connected {
+  background: var(--pass);
+}
+.ws-reconnected {
+  background: var(--accent);
+}
+.ws-reconnecting,
+.ws-disconnected {
+  background: var(--fail);
+}
+
+.ws-hint {
+  color: var(--review);
+}
+
+.state-block {
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.state-block.error {
+  color: var(--fail);
+}
+
+.state-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.btn {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.filter-row input,
+.filter-row select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+/* detail modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 17, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: min(1100px, 94vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h3 {
+  margin: 0;
+}
+
+.modal-body {
+  padding: 14px 16px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 18px;
+}
+
+.detail-col h4 {
+  margin: 12px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.kv dt {
+  color: var(--muted);
+}
+
+.kv dd {
+  margin: 0;
+}
+
+/* bbox image */
+.bbox-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.bbox-image {
+  display: block;
+  max-width: 100%;
+  background: #000;
+}
+
+.bbox-overlay {
+  position: absolute;
+  inset: 0;
+}
+
+.bbox-label {
+  font-family: Consolas, monospace;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.85);
+  stroke-width: 3px;
+}

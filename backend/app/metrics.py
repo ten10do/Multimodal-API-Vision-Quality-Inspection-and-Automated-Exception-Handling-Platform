@@ -17,6 +17,15 @@ THROUGHPUT_WINDOW_SECONDS = 60.0
 
 
 class RealtimeMetrics:
+    """Backend-side canonical pipeline counters (Phase 4 semantics).
+
+    completed_total is incremented on every completed inspection and must
+    equal pass_total + review_total + fail_total. failed_total counts SYSTEM
+    processing failures only and is shown separately from fail_total (product
+    quality FAIL). captured_total / queued_current / processing_current are
+    reported by the orchestrator via telemetry.
+    """
+
     def __init__(self) -> None:
         self._lock = asyncio.Lock()
         self._processed = 0
@@ -30,9 +39,9 @@ class RealtimeMetrics:
         self._started_at = time.monotonic()
         # telemetry reported by the orchestrator (simulator side)
         self._telemetry: dict = {
-            "total_captured": 0,
-            "queue_depth": 0,
-            "processing_count": 0,
+            "captured_total": 0,
+            "queued_current": 0,
+            "processing_current": 0,
             "simulator_running": False,
             "simulator_interval_ms": None,
             "worker_count": None,
@@ -74,9 +83,9 @@ class RealtimeMetrics:
             self._completions.clear()
             self._started_at = time.monotonic()
             self._telemetry.update({
-                "total_captured": 0,
-                "queue_depth": 0,
-                "processing_count": 0,
+                "captured_total": 0,
+                "queued_current": 0,
+                "processing_current": 0,
                 "simulator_running": False,
                 "simulator_interval_ms": None,
                 "worker_count": None,
@@ -93,14 +102,16 @@ class RealtimeMetrics:
             throughput = len(recent) / THROUGHPUT_WINDOW_SECONDS
             uptime = now - self._started_at
             out = {
-                "total_captured": self._telemetry["total_captured"],
-                "total_processed": self._processed,
-                "total_failed": self._failed,
-                "pass_count": self._pass_count,
-                "review_count": self._review_count,
-                "fail_count": self._fail_count,
-                "queue_depth": self._telemetry["queue_depth"],
-                "processing_count": self._telemetry["processing_count"],
+                # orchestrator-side (produced / in-flight)
+                "captured_total": self._telemetry["captured_total"],
+                "queued_current": self._telemetry["queued_current"],
+                "processing_current": self._telemetry["processing_current"],
+                # backend-side (terminal)
+                "completed_total": self._processed,
+                "failed_total": self._failed,
+                "pass_total": self._pass_count,
+                "review_total": self._review_count,
+                "fail_total": self._fail_count,
                 "queue_peak_depth": self._telemetry["queue_peak_depth"],
                 "simulator_running": self._telemetry["simulator_running"],
                 "simulator_interval_ms": self._telemetry["simulator_interval_ms"],

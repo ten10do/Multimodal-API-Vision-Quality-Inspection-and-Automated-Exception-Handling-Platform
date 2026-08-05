@@ -18,7 +18,8 @@ PyTorch / YOLOv8 / PatchCore / PaddleOCR / FastAPI / SQLAlchemy / WebSocket / Re
 - [x] Phase 1 Vision MVP（YOLOv8s + NEU-DET，见 [docs/02-phase1-report.md](docs/02-phase1-report.md)）
 - [x] Phase 2 Backend MVP（FastAPI + PostgreSQL + Rule Engine + Inference HTTP API，见本文件与 docs）
 - [x] Phase 3 Realtime Pipeline（Camera Simulator + Orchestrator + WebSocket，见 [docs/05-phase3-benchmark.md](docs/05-phase3-benchmark.md)）
-- [ ] Phase 4 Dashboard
+- [x] Phase 4 Frontend Dashboard（React + Vite + TypeScript + ECharts，见 [docs/06-phase4-dashboard.md](docs/06-phase4-dashboard.md)）
+- [ ] Phase 5 Dashboard Interactive
 
 ## 本地启动（Phase 2）
 
@@ -94,6 +95,47 @@ ws://127.0.0.1:8000/api/v1/ws/inspections
 
 ```bash
 .venv/Scripts/python.exe scripts/prepare_test_db.py --recreate
+```
+
+## Frontend Dashboard 启动与演示（Phase 4）
+
+依赖：Node 22.22.2 + npm。
+
+```bash
+cd frontend
+"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" install --no-audit --no-fund
+"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" exec playwright install chromium
+
+# 启动顺序：推理服务 → 后端 → 模拟器 → 前端
+cd ../inference-service
+../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --port 8100
+
+cd ../backend
+IVQC_DATABASE_URL=postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_test \
+IVQC_INFERENCE_SERVICE_URL=http://127.0.0.1:8100 \
+../.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000
+
+cd ..
+.venv/Scripts/python.exe -m simulator.run_pipeline --interval-ms 500 --workers 2 --backend-url http://127.0.0.1:8000 --batch demo-p4 --loop
+
+cd frontend
+"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" run dev
+# 浏览器访问 http://127.0.0.1:5173
+```
+
+演示截图（含真实链路数据）：
+
+```bash
+cd frontend
+NODE_OPTIONS="" "C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" e2e/demo.cjs
+# 截图输出到 docs/screenshots/01-overview.png ... 05-overview-running.png
+```
+
+前端测试：
+
+```bash
+"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" test          # vitest 25 项
+NODE_OPTIONS="" "C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" exec playwright test  # 浏览器 E2E 5 项
 ```
 
 ## 测试

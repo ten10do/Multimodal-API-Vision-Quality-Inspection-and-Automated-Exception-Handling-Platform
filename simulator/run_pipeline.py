@@ -78,16 +78,18 @@ async def _main(args: argparse.Namespace) -> int:
     duration = time.perf_counter() - started
     m = orchestrator.metrics
     e2e = m.e2e_latencies
-    throughput = (m.total_processed + m.total_failed) / duration if duration else 0.0
+    throughput = (m.completed_total + m.failed_total) / duration if duration else 0.0
 
     print("\n===== Phase 3 benchmark =====")
-    print(f"sample count           : {m.total_captured}")
+    print(f"sample count           : {m.captured_total}")
     print(f"simulator interval     : {sim_cfg.interval_ms} ms")
     print(f"worker count           : {orch_cfg.workers}")
+    print(f"queue maxsize          : {orch_cfg.queue_size}")
+    print(f"peak queue depth       : {m.queue_peak_depth}")
     print(f"total duration         : {duration:.2f} s")
-    print(f"success count          : {m.total_processed}")
-    print(f"failed count           : {m.total_failed}")
-    print(f"pass/review/fail       : {m.pass_count}/{m.review_count}/{m.fail_count}")
+    print(f"completed              : {m.completed_total}")
+    print(f"failed (system)        : {m.failed_total}")
+    print(f"pass/review/fail       : {m.pass_total}/{m.review_total}/{m.fail_total}")
     if e2e:
         e2e_sorted = sorted(e2e)
         print(f"e2e avg latency        : {sum(e2e)/len(e2e):.1f} ms")
@@ -97,9 +99,9 @@ async def _main(args: argparse.Namespace) -> int:
         inf = m.inference_latencies
         print(f"inference avg latency  : {sum(inf)/len(inf):.1f} ms")
     print(f"throughput             : {throughput:.2f} inspections/s")
-    print(f"queue peak depth       : {m.queue_peak_depth}")
+    print(f"conservation (drained) : captured({m.captured_total}) == completed({m.completed_total}) + failed({m.failed_total}) -> {m.conservation_ok()}")
     print("===========================")
-    return 0 if m.total_failed == 0 else 1
+    return 0 if m.failed_total == 0 else 1
 
 
 def main() -> int:

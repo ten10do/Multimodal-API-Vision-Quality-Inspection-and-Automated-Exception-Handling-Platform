@@ -29,26 +29,54 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class OrchestratorMetrics:
-    total_captured: int = 0
-    total_processed: int = 0
-    total_failed: int = 0
-    pass_count: int = 0
-    review_count: int = 0
-    fail_count: int = 0
+    """Canonical pipeline counters (Phase 4 metric semantics).
+
+    Conservation law (running):
+        captured_total == queued_current + processing_current + completed_total + failed_total
+    After drain (queued == processing == 0):
+        captured_total == completed_total + failed_total
+    And: pass_total + review_total + fail_total == completed_total
+
+    failed_total counts SYSTEM processing failures (inference down, backend
+    error, retries exhausted). fail_total counts PRODUCT quality FAIL after a
+    completed inspection. The two must never be mixed.
+    """
+
+    captured_total: int = 0
+    queued_current: int = 0
+    processing_current: int = 0
+    completed_total: int = 0
+    failed_total: int = 0
+    pass_total: int = 0
+    review_total: int = 0
+    fail_total: int = 0
     queue_peak_depth: int = 0
     e2e_latencies: list[float] = field(default_factory=list)
     inference_latencies: list[float] = field(default_factory=list)
+
+    def update_flow(self, queue_depth: int, processing: int) -> None:
+        self.queued_current = queue_depth
+        self.processing_current = processing
+
+    def conservation_ok(self) -> bool:
+        return (
+            self.captured_total
+            == self.queued_current + self.processing_current + self.completed_total + self.failed_total
+        )
 
     def snapshot(self) -> dict:
         e2e = self.e2e_latencies
         inf = self.inference_latencies
         return {
-            "total_captured": self.total_captured,
-            "total_processed": self.total_processed,
-            "total_failed": self.total_failed,
-            "pass_count": self.pass_count,
-            "review_count": self.review_count,
-            "fail_count": self.fail_count,
+            "captured_total": self.captured_total,
+            "queued_current": self.queued_current,
+            "processing_current": self.processing_current,
+            "completed_total": self.completed_total,
+            "failed_total": self.failed_total,
+            "pass_total": self.pass_total,
+            "review_total": self.review_total,
+            "fail_total": self.fail_total,
+            "queue_peak_depth": self.queue_peak_depth,
             "e2e_avg_ms": round(sum(e2e) / len(e2e), 2) if e2e else None,
             "e2e_p50_ms": round(median(e2e), 2) if e2e else None,
             "e2e_p95_ms": round(sorted(e2e)[max(0, int(len(e2e) * 0.95) - 1)], 2) if e2e else None,
@@ -66,6 +94,7 @@ class InspectionOrchestrator:
         self._client = client or httpx.AsyncClient(timeout=config.request_timeout_seconds)
         self._lock = asyncio.Lock()
         self._started_at = 0.0
+        self._simulator: CameraSimulator | None = None
 
     @property
     def queue_depth(self) -> int:
@@ -84,6 +113,7 @@ class InspectionOrchestrator:
         if max_images is not None:
             simulator.max_captures = max_images  # precise production limit
         self._started_at = time.perf_counter()
+        self._simulator = simulator
         self._sim_interval_ms = simulator.config.interval_ms
         self._workers = [asyncio.create_task(self._worker(i)) for i in range(self.config.workers)]
         telemetry_task = asyncio.create_task(self._telemetry_loop())
@@ -109,6 +139,15 @@ class InspectionOrchestrator:
                 await telemetry_task
             except asyncio.CancelledError:
                 pass
+            # final drained snapshot: captured == completed + failed
+            async with self._lock:
+                self.metrics.captured_total = simulator.captured_count
+                self.metrics.update_flow(0, 0)
+                if not self.metrics.conservation_ok():
+                    logger.warning(
+                        "final metric conservation broken: captured=%d completed=%d failed=%d",
+                        self.metrics.captured_total, self.metrics.completed_total, self.metrics.failed_total,
+                    )
             await self._client.aclose()
 
     async def _worker(self, index: int) -> None:
@@ -119,7 +158,6 @@ class InspectionOrchestrator:
                 return
             async with self._lock:
                 self._processing += 1
-                self.metrics.total_captured += 1
             started = time.perf_counter()
             try:
                 await self._submit_with_retry(capture)
@@ -128,7 +166,7 @@ class InspectionOrchestrator:
             except Exception as exc:
                 logger.warning("worker %d failed capture %s: %s", index, capture.capture_id, exc)
                 async with self._lock:
-                    self.metrics.total_failed += 1
+                    self.metrics.failed_total += 1
             finally:
                 async with self._lock:
                     self._processing -= 1
@@ -179,27 +217,45 @@ class InspectionOrchestrator:
         if str(body.get("status", "")).upper() == "FAILED":
             raise _CaptureFailed(f"inspection persisted as FAILED: {body.get('inspection_id')}")
         async with self._lock:
-            self.metrics.total_processed += 1
+            self.metrics.completed_total += 1
             quality = body.get("quality_result")
             if quality == "PASS":
-                self.metrics.pass_count += 1
+                self.metrics.pass_total += 1
             elif quality == "REVIEW":
-                self.metrics.review_count += 1
+                self.metrics.review_total += 1
             elif quality == "FAIL":
-                self.metrics.fail_count += 1
+                self.metrics.fail_total += 1
             if body.get("inference_latency_ms") is not None:
                 self.metrics.inference_latencies.append(body["inference_latency_ms"])
 
     async def _telemetry_loop(self) -> None:
         while True:
             await asyncio.sleep(self.config.telemetry_interval_seconds)
+            if self._simulator is not None:
+                # captured_total = produced captures; conservation law holds
+                # while running: captured == queued + processing + completed + failed
+                async with self._lock:
+                    self.metrics.captured_total = self._simulator.captured_count
+                    self.metrics.update_flow(self.queue.qsize(), self._processing)
+                    if not self.metrics.conservation_ok():
+                        logger.warning(
+                            "metric conservation broken: captured=%d queued=%d processing=%d completed=%d failed=%d",
+                            self.metrics.captured_total, self.metrics.queued_current,
+                            self.metrics.processing_current, self.metrics.completed_total,
+                            self.metrics.failed_total,
+                        )
             try:
                 await self._client.post(
                     f"{self.config.backend_url}/api/v1/realtime/telemetry",
                     json={
-                        "total_captured": self.metrics.total_captured,
-                        "queue_depth": self.queue.qsize(),
-                        "processing_count": self._processing,
+                        "captured_total": self.metrics.captured_total,
+                        "queued_current": self.metrics.queued_current,
+                        "processing_current": self.metrics.processing_current,
+                        "completed_total": self.metrics.completed_total,
+                        "failed_total": self.metrics.failed_total,
+                        "pass_total": self.metrics.pass_total,
+                        "review_total": self.metrics.review_total,
+                        "fail_total": self.metrics.fail_total,
                         "simulator_running": True,
                         "simulator_interval_ms": getattr(self, "_sim_interval_ms", None),
                         "worker_count": self.config.workers,

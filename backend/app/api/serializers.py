@@ -9,6 +9,7 @@ def to_inspection_out(inspection: Inspection) -> InspectionOut:
         inspection_id=inspection.inspection_id,
         product_id=inspection.product.product_id,
         batch_id=inspection.batch_id,
+        image_url=f"/api/v1/inspections/{inspection.inspection_id}/image",
         status=inspection.status,
         quality_result=inspection.quality_result,
         severity=inspection.severity,

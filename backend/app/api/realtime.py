@@ -20,12 +20,15 @@ async def realtime_status() -> dict:
 
 @rt_router.post("/telemetry")
 async def update_telemetry(body: dict) -> dict:
-    """Internal endpoint used by the orchestrator to report simulator-side
-    telemetry (captured count, queue depth, workers)."""
+    """Internal endpoint used by the orchestrator to report the pipeline view
+    (produced captures, queue depth, workers). Terminal counters
+    (completed/failed/pass/review/fail) are owned by the backend, which is the
+    source of truth for persisted inspections, and cannot be overridden here.
+    """
     allowed = {
-        "total_captured",
-        "queue_depth",
-        "processing_count",
+        "captured_total",
+        "queued_current",
+        "processing_current",
         "simulator_running",
         "simulator_interval_ms",
         "worker_count",
