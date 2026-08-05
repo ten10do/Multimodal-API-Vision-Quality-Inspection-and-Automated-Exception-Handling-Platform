@@ -42,6 +42,7 @@ export interface Inspection {
   image_url: string | null;
   status: ProcessStatus;
   quality_result: QualityResult | null;
+  final_quality_result?: QualityResult | null;
   severity: Severity | null;
   model_name: string | null;
   model_version: string | null;
@@ -51,6 +52,14 @@ export interface Inspection {
   created_at: string;
   defects: Defect[];
   product?: Product;
+  // Phase 6 anomaly + fusion
+  anomaly_score?: number | null;
+  anomaly_threshold?: number | null;
+  is_anomalous?: boolean | null;
+  anomaly_map_url?: string | null;
+  anomaly_model_version?: string | null;
+  anomaly_regions?: Array<{ bbox_xyxy: number[]; bbox_normalized: number[]; area_ratio: number; region_score: number }> | null;
+  fusion_class?: string | null;
 }
 
 export interface RealtimeStatus {
@@ -166,6 +175,12 @@ export interface ReviewTask {
   batch_id: string | null;
   image_url: string | null;
   decision: ReviewDecision | null;
+  // Phase 6 anomaly snapshot (6G)
+  anomaly_score?: number | null;
+  anomaly_threshold?: number | null;
+  is_anomalous?: boolean | null;
+  anomaly_regions?: Array<{ bbox_xyxy: number[]; bbox_normalized: number[]; area_ratio: number; region_score: number }> | null;
+  anomaly_map_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -199,7 +214,8 @@ export interface ReviewMetrics {
   resolved: number;
   average_review_wait_time_s: number | null;
   review_rate: number | null;
-  ai_human_agreement_rate: number | null;
+  defect_confirmation_rate: number | null;
+  ai_human_label_agreement_rate: number | null;
   override_rate: number | null;
   corrected_label_count: number;
   pass_overrides: number;

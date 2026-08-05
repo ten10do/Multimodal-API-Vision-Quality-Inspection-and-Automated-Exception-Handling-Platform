@@ -5,6 +5,22 @@ The canonical schema lives in packages/vision-contract (installed as the
 (`app.vision_contract`) working.
 """
 
-from vision_contract import Detection, InferenceResult, NEU_DET_CLASSES, utc_now_iso  # noqa: F401
+from vision_contract import (  # noqa: F401
+    AnomalyRegion,
+    AnomalyResult,
+    Detection,
+    InferenceResult,
+    NEU_DET_CLASSES,
+    VisionResult,
+    utc_now_iso,
+)
 
-__all__ = ["Detection", "InferenceResult", "NEU_DET_CLASSES", "utc_now_iso"]
+__all__ = [
+    "AnomalyRegion",
+    "AnomalyResult",
+    "Detection",
+    "InferenceResult",
+    "NEU_DET_CLASSES",
+    "VisionResult",
+    "utc_now_iso",
+]

@@ -1,0 +1,43 @@
+{
+  "dataset": "MVTec AD bottle",
+  "domain_note": "benchmark only; NOT a steel-production-domain evaluation (see docs/08)",
+  "model": "patchcore-wrn50-2",
+  "model_version": "mvtec-bottle-baseline",
+  "n_normal_train": 209,
+  "n_test": 83,
+  "n_anomaly": 63,
+  "threshold": 0.20273447036743164,
+  "image_auroc": 1.0,
+  "pixel_auroc": 0.9863,
+  "aup_pro": 0.9545,
+  "normal_score_dist": {
+    "min": 0.0925,
+    "max": 0.2223,
+    "mean": 0.1381
+  },
+  "anomaly_score_dist": {
+    "min": 0.2281,
+    "max": 0.5307,
+    "mean": 0.4081
+  },
+  "false_positives": [
+    [
+      "005.png",
+      0.2156
+    ],
+    [
+      "006.png",
+      0.2223
+    ]
+  ],
+  "false_negatives": [
+    [
+      "001.png",
+      0.0
+    ]
+  ],
+  "latency_ms_mean": 419.77,
+  "latency_ms_p95": 427.48,
+  "peak_vram_mb": 289.5,
+  "device": "cuda:0"
+}

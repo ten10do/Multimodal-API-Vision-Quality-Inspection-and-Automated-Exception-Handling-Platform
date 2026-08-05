@@ -132,8 +132,8 @@ export function ReviewQueuePage() {
           <div className="metric-hint">AI REVIEW / completed</div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">AI-Human Agreement</div>
-          <div className="metric-value">{m?.ai_human_agreement_rate === null || m === undefined ? "—" : `${((m.ai_human_agreement_rate ?? 0) * 100).toFixed(1)}%`}</div>
+          <div className="metric-label">Defect Confirmation</div>
+          <div className="metric-value">{m?.defect_confirmation_rate === null || m === undefined ? "—" : `${((m.defect_confirmation_rate ?? 0) * 100).toFixed(1)}%`}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label">Override Rate</div>
@@ -241,6 +241,12 @@ function ReviewDetailModal({
   const needsLabel = decision !== "PASS";
   const claimedByMe = task.assigned_to === REVIEWER;
   const resolved = task.status === "RESOLVED";
+  // Phase 6 (6G): an UNKNOWN_ANOMALY review (no YOLO defect) has no AI label
+  // to correct, so CORRECT_DEFECT is not offered.
+  const anomalyOnly = (task.is_anomalous === true) && (task.ai_defects_snapshot.length === 0);
+  const decisions: HumanDecision[] = anomalyOnly
+    ? ["PASS", "CONFIRM_DEFECT", "OTHER_DEFECT"]
+    : ["PASS", "CONFIRM_DEFECT", "CORRECT_DEFECT", "OTHER_DEFECT"];
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -272,6 +278,40 @@ function ReviewDetailModal({
               ) : (
                 <div className="state-block empty">图像不可用</div>
               )}
+
+              {task.is_anomalous ? (
+                <>
+                  <h4>Anomaly Heatmap（PatchCore）</h4>
+                  {task.anomaly_map_url ? (
+                    <img src={task.anomaly_map_url} alt="anomaly heatmap" style={{ width: "100%", borderRadius: 4, border: "1px solid var(--border)" }} />
+                  ) : (
+                    <div className="state-block empty">heatmap 不可用</div>
+                  )}
+                  <div className="kv" style={{ marginTop: 8 }}>
+                    <dt>anomaly_score</dt>
+                    <dd>{task.anomaly_score?.toFixed(4)}</dd>
+                    <dt>threshold</dt>
+                    <dd>{task.anomaly_threshold?.toFixed(4)}</dd>
+                    <dt>regions</dt>
+                    <dd>{task.anomaly_regions?.length ?? 0}</dd>
+                  </div>
+                  {(task.anomaly_regions?.length ?? 0) > 0 ? (
+                    <table className="table" style={{ marginTop: 6 }}>
+                      <thead>
+                        <tr><th>area_ratio</th><th>region_score</th></tr>
+                      </thead>
+                      <tbody>
+                        {(task.anomaly_regions ?? []).map((r, i) => (
+                          <tr key={i}>
+                            <td>{r.area_ratio}</td>
+                            <td>{r.region_score.toFixed(4)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : null}
+                </>
+              ) : null}
 
               <h4>AI Prediction（固化快照）</h4>
               <table className="table">
@@ -326,7 +366,7 @@ function ReviewDetailModal({
               ) : claimedByMe ? (
                 <>
                   <div className="filter-row" style={{ marginBottom: 8 }}>
-                    {(["PASS", "CONFIRM_DEFECT", "CORRECT_DEFECT", "OTHER_DEFECT"] as HumanDecision[]).map((d) => (
+                    {decisions.map((d) => (
                       <label key={d} style={{ display: "flex", gap: 4, alignItems: "center" }}>
                         <input type="radio" checked={decision === d} onChange={() => setDecision(d)} />
                         {d}

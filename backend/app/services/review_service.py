@@ -100,6 +100,9 @@ def _review_event(task: ReviewTask, event_type: str, **extra) -> ReviewEvent:
         severity=task.ai_severity,
         model_version=task.ai_model_version,
         image_url=task.image_url,
+        anomaly_score=task.anomaly_score,
+        is_anomalous=task.is_anomalous,
+        anomaly_map_url=task.anomaly_map_url,
         **extra,
     )
 
@@ -107,17 +110,16 @@ def _review_event(task: ReviewTask, event_type: str, **extra) -> ReviewEvent:
 class ReviewService:
     async def create_task_for_inspection(self, session: AsyncSession, inspection: Inspection) -> ReviewTask | None:
         """5B: only completed REVIEW inspections get a review task; system
-        FAILED never enters the queue. Idempotent: at most one active task."""
+        FAILED never enters the queue. Idempotent: at most one task per
+        inspection over its lifetime (global unique constraint, Phase 6
+        pre-gate; re-review is not supported)."""
         if inspection.status.value != "completed" or inspection.quality_result != QualityResult.REVIEW:
             return None
 
-        active = await session.execute(
-            select(ReviewTask).where(
-                ReviewTask.inspection_id == inspection.id,
-                ReviewTask.status != ReviewTaskStatus.RESOLVED,
-            )
+        existing_row = await session.execute(
+            select(ReviewTask).where(ReviewTask.inspection_id == inspection.id)
         )
-        existing = active.scalar_one_or_none()
+        existing = existing_row.scalar_one_or_none()
         if existing is not None:
             return existing
 
@@ -138,6 +140,16 @@ class ReviewService:
             station=inspection.product.station,
             batch_id=inspection.batch_id,
             image_url=f"/api/v1/inspections/{inspection.inspection_id}/image",
+            # Phase 6 anomaly snapshot for UNKNOWN_ANOMALY review (6G)
+            anomaly_score=inspection.anomaly_score,
+            anomaly_threshold=inspection.anomaly_threshold,
+            is_anomalous=inspection.is_anomalous,
+            anomaly_regions=inspection.anomaly_regions,
+            anomaly_map_url=(
+                f"/api/v1/inspections/{inspection.inspection_id}/anomaly-map"
+                if inspection.is_anomalous and inspection.anomaly_map_path
+                else None
+            ),
         )
         task.inspection = inspection
         session.add(task)
@@ -322,14 +334,19 @@ class ReviewService:
         return correction
 
     async def metrics(self, session: AsyncSession) -> dict:
-        """5K: review metrics with explicit semantics.
+        """5K (Phase 6 pre-gate): review metrics with explicit semantics.
 
-        pending_review_count    = PENDING + IN_REVIEW (unresolved)
-        average_review_wait_time= mean(resolved_at - created_at) over resolved
-        review_rate             = REVIEW inspections / completed inspections
-        ai_human_agreement_rate = human confirmed AI defect / resolved reviews
-        override_rate           = 1 - agreement (PASS/CORRECT/OTHER overrides)
-        corrected_label_count   = count(CORRECT_DEFECT)
+        pending_review_count        = PENDING + IN_REVIEW (unresolved)
+        average_review_wait_time_s  = mean(resolved_at - created_at) over resolved
+        review_rate                 = REVIEW tasks / completed inspections
+        defect_confirmation_rate    = human confirmed the AI defect /
+                                      resolved reviews (renamed from
+                                      ai_human_agreement_rate)
+        ai_human_label_agreement_rate = among decisions WITH a human_label,
+                                      share whose label equals the AI top
+                                      defect class, over resolved reviews
+        override_rate               = 1 - defect_confirmation_rate
+        corrected_label_count       = count(CORRECT_DEFECT)
         """
         from ..metrics import metrics as rt
 
@@ -349,18 +366,22 @@ class ReviewService:
         avg_wait = wait_row.scalar_one()
         wait_seconds = round(avg_wait, 1) if avg_wait is not None else None
 
-        decision_rows = await session.execute(
-            select(ReviewDecision.human_decision, func.count()).group_by(ReviewDecision.human_decision)
-        )
-        decisions = {row[0].value if hasattr(row[0], "value") else row[0]: row[1] for row in decision_rows}
-        confirm = decisions.get("CONFIRM_DEFECT", 0)
-        pass_count = decisions.get("PASS", 0)
-        corrected = decisions.get("CORRECT_DEFECT", 0)
+        decisions = (await session.execute(select(ReviewDecision))).scalars().all()
+        confirm = sum(1 for d in decisions if d.human_decision == HumanDecision.CONFIRM_DEFECT)
+        pass_count = sum(1 for d in decisions if d.human_decision == HumanDecision.PASS)
+        corrected = sum(1 for d in decisions if d.human_decision == HumanDecision.CORRECT_DEFECT)
+        label_agree = 0
+        for d in decisions:
+            if not d.human_label:
+                continue
+            top_class, _ = _top_defect(d.ai_defects_snapshot or [])
+            if top_class and d.human_label == top_class:
+                label_agree += 1
 
         rt_snap = await rt.snapshot()
         completed = rt_snap["completed_total"]
 
-        agreement = round(confirm / resolved, 4) if resolved else None
+        confirmation = round(confirm / resolved, 4) if resolved else None
         total_tasks = pending + in_review + resolved
         return {
             "pending_review_count": pending + in_review,
@@ -370,8 +391,9 @@ class ReviewService:
             "average_review_wait_time_s": wait_seconds,
             # review_rate = AI REVIEW inspections / completed inspections (5K)
             "review_rate": round(total_tasks / completed, 4) if completed else None,
-            "ai_human_agreement_rate": agreement,
-            "override_rate": round(1 - agreement, 4) if agreement is not None else None,
+            "defect_confirmation_rate": confirmation,
+            "ai_human_label_agreement_rate": round(label_agree / resolved, 4) if resolved else None,
+            "override_rate": round(1 - confirmation, 4) if confirmation is not None else None,
             "corrected_label_count": corrected,
             "pass_overrides": pass_count,
         }

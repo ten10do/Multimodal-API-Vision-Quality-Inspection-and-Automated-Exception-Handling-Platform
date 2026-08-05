@@ -53,7 +53,7 @@ class QualityRuleEngine:
         ]
         self._enabled.sort(key=lambda r: r.priority)
 
-    def evaluate(self, detections: list[DefectInput]) -> Decision:
+    def evaluate(self, detections: list[DefectInput], fusion_class: str | None = None) -> Decision:
         """Aggregate per-detection rule matches into a single decision.
 
         Priority semantics:
@@ -67,7 +67,20 @@ class QualityRuleEngine:
         - No detections always yields PASS (business behaviour only, see
           docs/01-negative-sample-strategy.md).
         - A detection with no matching rule yields REVIEW with a clear reason.
+
+        Phase 6 (6F): the Vision Fusion class is consumed here.
+        - UNKNOWN_ANOMALY  -> REVIEW (PatchCore shows a deviation from the
+          normal distribution, which does not itself prove business FAIL).
+        - KNOWN_DEFECT_WITH_ANOMALY -> normal per-detection rules decide.
         """
+        if fusion_class == "UNKNOWN_ANOMALY":
+            return Decision(
+                QualityResult.REVIEW,
+                Severity.MEDIUM,
+                None,
+                self._active_version,
+                "unknown anomaly detected by PatchCore; needs human review",
+            )
         if not detections:
             return Decision(QualityResult.PASS, Severity.LOW, None, self._active_version, "no detections")
 

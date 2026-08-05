@@ -166,7 +166,7 @@ async def training_candidates(
     from ..enums import QualityResult as QR
 
     stmt = (
-        select(ReviewDecision, Inspection)
+        select(ReviewDecision, Inspection, ReviewTask)
         .join(Inspection, Inspection.id == ReviewDecision.inspection_id)
         .join(ReviewTask, ReviewTask.id == ReviewDecision.review_task_id)
         .options(
@@ -179,7 +179,7 @@ async def training_candidates(
     rows = (await session.execute(stmt)).all()
 
     candidates: list[TrainingCandidate] = []
-    for decision, inspection in rows:
+    for decision, inspection, task in rows:
         ai_defects = decision.ai_defects_snapshot or []
         top = max(ai_defects, key=lambda d: d.get("confidence", 0), default=None)
         ai_label = top["class_name"] if top else None
@@ -205,6 +205,7 @@ async def training_candidates(
                 agreement=agreement,
                 review_reason=decision.reason,
                 model_version=inspection.model_version,
+                anomaly_score=task.anomaly_score,
                 timestamp=decision.created_at,
             )
         )
@@ -214,7 +215,7 @@ async def training_candidates(
         writer = csv.DictWriter(
             buffer,
             fieldnames=["inspection_id", "image_url", "ai_label", "human_label",
-                        "ai_confidence", "agreement", "review_reason", "model_version", "timestamp"],
+                        "ai_confidence", "agreement", "review_reason", "model_version", "anomaly_score", "timestamp"],
         )
         writer.writeheader()
         for c in candidates:

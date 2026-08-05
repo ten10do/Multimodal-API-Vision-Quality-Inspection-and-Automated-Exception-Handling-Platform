@@ -1,0 +1,12 @@
+{
+  "benchmark_kind": "production-pipeline E2E (simulator -> backend HTTP -> inference service -> PG)",
+  "sample_count": 500,
+  "worker_count": 2,
+  "inference_latency_ms": {
+    "mean_ms": 456.2,
+    "p50_ms": 438.8,
+    "p95_ms": 521.2
+  },
+  "throughput_per_s_10s_window": 2.1,
+  "realtime_throughput_field": 1.967
+}

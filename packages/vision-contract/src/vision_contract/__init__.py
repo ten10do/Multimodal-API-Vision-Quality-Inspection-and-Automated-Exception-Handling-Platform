@@ -85,4 +85,93 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-__all__ = ["Detection", "InferenceResult", "NEU_DET_CLASSES", "utc_now_iso"]
+class AnomalyRegion(BaseModel):
+    """A connected anomalous region, expressed as objective geometry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    bbox_xyxy: Tuple[float, float, float, float] = Field(
+        description="Pixel coordinates (x1, y1, x2, y2)"
+    )
+    bbox_normalized: Tuple[float, float, float, float] = Field(
+        description="Normalized coordinates in [0, 1]"
+    )
+    area_ratio: float = Field(ge=0.0, le=1.0, description="Region area / image area")
+    region_score: float = Field(ge=0.0, description="Mean anomaly score inside the region")
+
+    @field_validator("bbox_xyxy")
+    @classmethod
+    def _bbox_valid(cls, bbox: Tuple[float, float, float, float]) -> Tuple[float, float, float, float]:
+        x1, y1, x2, y2 = bbox
+        if not (x1 < x2 and y1 < y2):
+            raise ValueError(f"bbox must satisfy x1 < x2 and y1 < y2, got {bbox}")
+        return bbox
+
+
+class AnomalyResult(BaseModel):
+    """Objective output of the anomaly detection pipeline (Phase 6).
+
+    Deliberately free of quality judgements: no PASS / REVIEW / FAIL and no
+    severity. is_anomalous is the model threshold decision only, which does
+    NOT imply a business-level FAIL (the Quality Rule Engine decides).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    model_name: str = Field(min_length=1)
+    model_version: str = Field(min_length=1)
+    anomaly_score: float = Field(ge=0.0, description="Image-level score (max of map)")
+    threshold: float = Field(ge=0.0, description="Decision threshold from the normal set")
+    is_anomalous: bool = Field(description="anomaly_score >= threshold (model-level, not business FAIL)")
+    regions: list[AnomalyRegion] = Field(default_factory=list)
+    latency_ms: float = Field(ge=0.0)
+    anomaly_map_png: str | None = Field(default=None, description="Base64-encoded PNG heatmap (for review UI)")
+
+
+class VisionResult(BaseModel):
+    """Full vision pipeline output: YOLO detections + optional anomaly result.
+
+    This is the single object the backend receives over HTTP (6H); the
+    backend never imports YOLO or PatchCore directly.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    inspection_id: str = Field(min_length=1)
+    model_name: str = Field(min_length=1)
+    model_version: str = Field(min_length=1)
+    image_width: int = Field(gt=0)
+    image_height: int = Field(gt=0)
+    detections: list[Detection] = Field(default_factory=list)
+    anomaly: AnomalyResult | None = Field(default=None, description="None when PatchCore unavailable")
+    fusion_class: str = Field(
+        default="NORMAL_CANDIDATE",
+        description="NORMAL_CANDIDATE | KNOWN_DEFECT | UNKNOWN_ANOMALY | KNOWN_DEFECT_WITH_ANOMALY",
+    )
+    latency_yolo_ms: float = Field(ge=0.0)
+    latency_anomaly_ms: float = Field(ge=0.0)
+    latency_fusion_ms: float = Field(ge=0.0)
+    inference_latency_ms: float = Field(ge=0.0, description="Total vision latency")
+    device: str = Field(min_length=1)
+    timestamp: str = Field(description="ISO 8601 UTC timestamp")
+
+    @field_validator("timestamp")
+    @classmethod
+    def _validate_timestamp(cls, value: str) -> str:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return value
+
+    @property
+    def has_detections(self) -> bool:
+        return len(self.detections) > 0
+
+
+__all__ = [
+    "AnomalyRegion",
+    "AnomalyResult",
+    "Detection",
+    "InferenceResult",
+    "NEU_DET_CLASSES",
+    "VisionResult",
+    "utc_now_iso",
+]

@@ -75,6 +75,15 @@ class Inspection(TimestampMixin, Base):
     image_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # ---- Phase 6 anomaly (PatchCore) + vision fusion ----
+    anomaly_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    anomaly_threshold: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_anomalous: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    anomaly_map_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    anomaly_model_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    anomaly_regions: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    fusion_class: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     product: Mapped[Product] = relationship(back_populates="inspections")
     defects: Mapped[list["Defect"]] = relationship(back_populates="inspection", cascade="all, delete-orphan")
 
@@ -148,16 +157,24 @@ class ReviewTask(TimestampMixin, Base):
     batch_id: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # ---- Phase 6 anomaly snapshot（UNKNOWN_ANOMALY 复核展示用）----
+    anomaly_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    anomaly_threshold: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_anomalous: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    anomaly_regions: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    anomaly_map_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     inspection: Mapped[Inspection] = relationship()
     decision: Mapped["ReviewDecision | None"] = relationship(back_populates="task", uselist=False)
 
 
+# 一个 inspection 生命周期最多一个 review task（Phase 6 前置门禁）。
+# 系统不支持二次 Review（RESOLVED 无 reopen 路径），故使用全局唯一约束；
+# 已 RESOLVED 决策的修订走 review_corrections。
 Index(
-    "uq_review_task_active_inspection",
+    "uq_review_task_inspection",
     ReviewTask.__table__.c.inspection_id,
     unique=True,
-    sqlite_where=ReviewTask.status != "RESOLVED",
-    postgresql_where=ReviewTask.__table__.c.status != "RESOLVED",
 )
 
 

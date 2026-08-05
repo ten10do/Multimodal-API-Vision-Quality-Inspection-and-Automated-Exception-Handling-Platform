@@ -100,3 +100,52 @@ def test_contract_has_no_quality_fields():
     assert "severity" not in InferenceResult.model_fields
     assert "quality_result" not in InferenceResult.model_fields
     assert "severity" not in Detection.model_fields
+
+
+def test_anomaly_result_contract():
+    """6D: the anomaly contract is objective; quality judgements are absent."""
+    from vision_contract import AnomalyRegion, AnomalyResult
+
+    r = AnomalyResult(
+        model_name="patchcore-wrn50-2",
+        model_version="mvtec-bottle-baseline",
+        anomaly_score=0.42,
+        threshold=0.2,
+        is_anomalous=True,
+        latency_ms=5.0,
+        regions=[
+            AnomalyRegion(bbox_xyxy=(1, 2, 10, 12), bbox_normalized=(0.01, 0.02, 0.1, 0.12), area_ratio=0.1, region_score=0.5)
+        ],
+    )
+    assert r.is_anomalous is True
+    assert r.regions[0].area_ratio == 0.1
+    # objective facts only: no quality judgement fields exist
+    for forbidden in ("quality_result", "severity", "final_quality_result", "human_decision"):
+        assert forbidden not in r.model_fields, f"{forbidden} must not be in AnomalyResult"
+
+
+def test_anomaly_result_rejects_quality_fields():
+    """extra='forbid' blocks PASS/REVIEW/FAIL sneaking into the anomaly contract."""
+    import pytest
+    from pydantic import ValidationError
+    from vision_contract import AnomalyResult
+
+    with pytest.raises(ValidationError):
+        AnomalyResult(
+            model_name="m", model_version="v", anomaly_score=0.5, threshold=0.2,
+            is_anomalous=True, latency_ms=1.0, quality_result="FAIL",
+        )
+
+
+def test_vision_result_with_anomaly():
+    from vision_contract import VisionResult
+
+    r = VisionResult(
+        inspection_id="i1", model_name="yolov8s", model_version="v1",
+        image_width=100, image_height=100, detections=[],
+        anomaly=None, fusion_class="NORMAL_CANDIDATE",
+        latency_yolo_ms=10, latency_anomaly_ms=0, latency_fusion_ms=0.1,
+        inference_latency_ms=10.1, device="cuda:0", timestamp="2026-08-05T00:00:00.000Z",
+    )
+    assert r.fusion_class == "NORMAL_CANDIDATE"
+    assert r.has_detections is False

@@ -1,0 +1,36 @@
+{
+  "benchmark_kind": "model-level (YOLO + PatchCore + fusion in one process)",
+  "device": "RTX 5060 8GB (cuda:0)",
+  "input_size": "YOLO native 640 letterbox; PatchCore 224x224",
+  "sample_count": 12,
+  "warmup_count": 2,
+  "worker_count": 1,
+  "yolo": {
+    "mean_ms": 15.37,
+    "p50_ms": 13.27,
+    "p95_ms": 21.46
+  },
+  "patchcore": {
+    "mean_ms": 754.96,
+    "p50_ms": 761.56,
+    "p95_ms": 790.6
+  },
+  "fusion": {
+    "mean_ms": 0.0,
+    "p50_ms": 0.0,
+    "p95_ms": 0.0
+  },
+  "total_vision": {
+    "mean_ms": 770.33,
+    "p50_ms": 776.56,
+    "p95_ms": 811.76
+  },
+  "models_coexist": true,
+  "peak_gpu_allocated_mb": 331.3,
+  "peak_gpu_reserved_mb": 356.0,
+  "runtime_allocated_mb": 307.5,
+  "fusion_distribution": {
+    "UNKNOWN_ANOMALY": 5,
+    "KNOWN_DEFECT_WITH_ANOMALY": 7
+  }
+}

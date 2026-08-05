@@ -83,6 +83,14 @@ class InspectionOut(BaseModel):
     error_message: str | None
     created_at: datetime
     defects: list[DefectOut] = Field(default_factory=list)
+    # Phase 6 anomaly + fusion
+    anomaly_score: float | None = None
+    anomaly_threshold: float | None = None
+    is_anomalous: bool | None = None
+    anomaly_map_url: str | None = None
+    anomaly_model_version: str | None = None
+    anomaly_regions: list[dict] | None = None
+    fusion_class: str | None = None
 
 
 class InspectionDetail(InspectionOut):
@@ -128,6 +136,12 @@ class ReviewTaskOut(BaseModel):
     batch_id: str | None
     image_url: str | None
     decision: ReviewDecisionOut | None = None
+    # Phase 6 anomaly snapshot (6G)
+    anomaly_score: float | None = None
+    anomaly_threshold: float | None = None
+    is_anomalous: bool | None = None
+    anomaly_regions: list[dict] | None = None
+    anomaly_map_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -139,7 +153,8 @@ class ReviewMetricsOut(BaseModel):
     resolved: int
     average_review_wait_time_s: float | None
     review_rate: float | None
-    ai_human_agreement_rate: float | None
+    defect_confirmation_rate: float | None
+    ai_human_label_agreement_rate: float | None
     override_rate: float | None
     corrected_label_count: int
     pass_overrides: int
@@ -154,6 +169,7 @@ class TrainingCandidate(BaseModel):
     agreement: bool
     review_reason: str | None
     model_version: str | None
+    anomaly_score: float | None = None
     timestamp: datetime
 
 

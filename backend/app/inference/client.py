@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 from pydantic import ValidationError
-from vision_contract import InferenceResult
+from vision_contract import VisionResult
 
 from ..config import get_settings
 
@@ -65,7 +65,7 @@ class InferenceClient:
             self._clients_by_loop[key] = client
         return client
 
-    async def infer(self, image_bytes: bytes, filename: str = "image.jpg", request_id: str | None = None) -> InferenceResult:
+    async def infer(self, image_bytes: bytes, filename: str = "image.jpg", request_id: str | None = None) -> VisionResult:
         rid = request_id or f"req-{uuid.uuid4().hex[:12]}"
         try:
             response = await self._client().post(
@@ -86,10 +86,10 @@ class InferenceClient:
 
         try:
             payload: dict[str, Any] = response.json()
-            result = InferenceResult.model_validate(payload)
+            result = VisionResult.model_validate(payload)
         except (ValueError, ValidationError) as exc:
             logger.warning("inference contract invalid request_id=%s: %s", rid, exc)
             raise InferenceContractError(f"invalid vision contract from inference service: {exc}") from exc
 
-        logger.info("inference ok request_id=%s detections=%d latency=%.1fms", rid, len(result.detections), result.inference_latency_ms)
+        logger.info("inference ok request_id=%s detections=%d fusion=%s latency=%.1fms", rid, len(result.detections), result.fusion_class, result.inference_latency_ms)
         return result

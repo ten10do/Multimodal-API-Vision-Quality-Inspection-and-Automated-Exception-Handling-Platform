@@ -87,6 +87,10 @@ class InspectionService:
             ) from exc
 
         rules = await self._load_rules(session)
+        # Phase 6 (6E/6F): the Vision Fusion class is an input to the Quality
+        # Rule Engine. UNKNOWN_ANOMALY -> REVIEW; other classes go through the
+        # per-detection rules.
+        fusion_class = getattr(contract, "fusion_class", None)
         decision = QualityRuleEngine(rules).evaluate(
             [
                 DefectInput(
@@ -96,7 +100,8 @@ class InspectionService:
                     defect_area_ratio=d.defect_area_ratio,
                 )
                 for d in contract.detections
-            ]
+            ],
+            fusion_class=fusion_class,
         )
 
         inspection.status = InspectionStatus.COMPLETED
@@ -112,6 +117,26 @@ class InspectionService:
         inspection.inference_latency_ms = contract.inference_latency_ms
         inspection.inference_request_id = request_id
         inspection.image_path = data.filename
+
+        # ---- Phase 6 anomaly snapshot (6D) ----
+        anomaly = getattr(contract, "anomaly", None)
+        # the fusion class (incl. the YOLO-only fallback when the anomaly
+        # channel is unavailable) is persisted regardless
+        inspection.fusion_class = fusion_class
+        if anomaly is not None:
+            inspection.anomaly_score = anomaly.anomaly_score
+            inspection.anomaly_threshold = anomaly.threshold
+            inspection.is_anomalous = anomaly.is_anomalous
+            inspection.anomaly_model_version = anomaly.model_version
+            inspection.anomaly_regions = [r.model_dump() for r in anomaly.regions] if anomaly.regions else None
+            if anomaly.anomaly_map_png:
+                try:
+                    import base64
+
+                    map_path = get_storage().save_anomaly_map(inspection_id, base64.b64decode(anomaly.anomaly_map_png))
+                    inspection.anomaly_map_path = str(map_path)
+                except Exception:  # noqa: BLE001 - heatmap persistence is best-effort
+                    logger.exception("anomaly map save failed inspection=%s", inspection_id)
 
         for det in contract.detections:
             session.add(

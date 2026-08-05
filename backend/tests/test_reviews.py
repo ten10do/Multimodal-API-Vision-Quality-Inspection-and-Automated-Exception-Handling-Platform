@@ -498,7 +498,8 @@ async def test_review_metrics_semantics(client, db_session, stub_infer):
     assert m["pending_review_count"] == 0
     assert m["resolved"] == 1
     assert m["review_rate"] == 0.5  # 1 REVIEW / 2 completed
-    assert m["ai_human_agreement_rate"] == 1.0  # CONFIRM confirms AI
+    assert m["defect_confirmation_rate"] == 1.0  # CONFIRM confirms AI
+    assert m["ai_human_label_agreement_rate"] == 1.0  # label == AI top defect
     assert m["override_rate"] == 0.0
     assert m["corrected_label_count"] == 0
     assert m["average_review_wait_time_s"] is not None

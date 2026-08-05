@@ -48,6 +48,10 @@ class ReviewEvent(BaseModel):
     severity: str | None = None
     model_version: str | None = None
     image_url: str | None = None
+    # Phase 6 anomaly snapshot
+    anomaly_score: float | None = None
+    is_anomalous: bool | None = None
+    anomaly_map_url: str | None = None
 
     def to_broadcast(self) -> dict:
         return self.model_dump()

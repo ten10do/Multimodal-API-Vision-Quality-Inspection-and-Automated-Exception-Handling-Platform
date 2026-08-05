@@ -168,6 +168,18 @@ async def get_inspection_image(inspection_id: str, session: AsyncSession = Depen
     return FileResponse(path, media_type="image/jpeg")
 
 
+@router.get("/inspections/{inspection_id}/anomaly-map")
+async def get_anomaly_map(inspection_id: str, session: AsyncSession = Depends(get_session)) -> Response:
+    """Phase 6 (6G): serve the PatchCore heatmap PNG for a REVIEW inspection."""
+    inspection = await _load_detail(session, inspection_id)
+    if inspection is None:
+        raise HTTPException(status_code=404, detail=_err("not_found", "inspection not found"))
+    data = get_storage().load_anomaly_map(inspection_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail=_err("anomaly_map_missing", "anomaly map not stored"))
+    return Response(content=data, media_type="image/png")
+
+
 async def _load_detail(session: AsyncSession, inspection_id: str) -> Inspection | None:
     result = await session.execute(
         select(Inspection).where(Inspection.inspection_id == inspection_id).options(*_EAGER)

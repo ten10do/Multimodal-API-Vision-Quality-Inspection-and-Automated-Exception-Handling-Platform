@@ -28,6 +28,17 @@ def to_inspection_out(inspection: Inspection) -> InspectionOut:
         error_message=inspection.error_message,
         created_at=inspection.created_at,
         defects=[DefectOut.model_validate(d) for d in inspection.defects],
+        anomaly_score=inspection.anomaly_score,
+        anomaly_threshold=inspection.anomaly_threshold,
+        is_anomalous=inspection.is_anomalous,
+        anomaly_map_url=(
+            f"/api/v1/inspections/{inspection.inspection_id}/anomaly-map"
+            if inspection.is_anomalous and inspection.anomaly_map_path
+            else None
+        ),
+        anomaly_model_version=inspection.anomaly_model_version,
+        anomaly_regions=inspection.anomaly_regions,
+        fusion_class=inspection.fusion_class,
     )
 
 
@@ -67,6 +78,11 @@ def to_review_task_out(task: ReviewTask) -> ReviewTaskOut:
         batch_id=task.batch_id,
         image_url=task.image_url,
         decision=decision_out,
+        anomaly_score=task.anomaly_score,
+        anomaly_threshold=task.anomaly_threshold,
+        is_anomalous=task.is_anomalous,
+        anomaly_regions=task.anomaly_regions,
+        anomaly_map_url=task.anomaly_map_url,
         created_at=task.created_at,
         updated_at=task.updated_at,
     )

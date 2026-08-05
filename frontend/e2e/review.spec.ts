@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 // 5M: real human-in-the-loop closed loop through the browser:
 //   Simulator -> GPU inference -> Rule Engine -> REVIEW -> Review Task ->
@@ -8,7 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
 // simulator must be producing REVIEW inspections.
 
 const BACKEND = "http://127.0.0.1:8000";
-const REVIEWER = "qc-worker-01";
+
 
 test.beforeAll(async () => {
   try {
@@ -22,22 +22,6 @@ test.beforeAll(async () => {
 async function pendingTasks(limit = 50): Promise<any[]> {
   const r = await fetch(`${BACKEND}/api/v1/reviews?status=PENDING&limit=${limit}`);
   return (await r.json()) as any[];
-}
-
-async function resolveViaApi(taskId: string, decision: string, label: string | null, reason: string | null) {
-  const r = await fetch(`${BACKEND}/api/v1/reviews/${taskId}/claim`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ reviewer: REVIEWER }),
-  });
-  if (!r.ok && r.status !== 409) throw new Error(`claim failed ${r.status}`);
-  const res = await fetch(`${BACKEND}/api/v1/reviews/${taskId}/resolve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ reviewer: REVIEWER, human_decision: decision, human_label: label, reason }),
-  });
-  if (!res.ok) throw new Error(`resolve failed ${res.status}: ${await res.text()}`);
-  return res.json();
 }
 
 test("Review Queue: claim + PASS override through the browser", async ({ page }) => {
@@ -155,7 +139,7 @@ test("Concurrent claim: second browser claim gets 409 conflict state", async ({ 
   await expect(page.getByText(/已被 other-worker 认领/)).toBeVisible({ timeout: 15000 });
 });
 
-test("Full chain audit: AI prediction preserved after browser resolves", async ({ page }) => {
+test("Full chain audit: AI prediction preserved after browser resolves", async () => {
   // pick any resolved task and confirm inspection rows keep AI + final distinct
   const resolved = await (await fetch(`${BACKEND}/api/v1/reviews?status=RESOLVED&limit=5`)).json();
   expect(resolved.length).toBeGreaterThan(0);
