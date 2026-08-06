@@ -14,8 +14,27 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 PY=".venv/Scripts/python.exe"
-NODE_JS="C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe"
-NPM="C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js"
+# Node / npm: honor $NODE_JS / $NPM overrides, otherwise auto-locate common
+# installs. No hard-coded user paths (works on any machine).
+NODE_JS="${NODE_JS:-}"
+if [ -z "$NODE_JS" ]; then
+  for cand in \
+    "${USERPROFILE//\\//}/.workbuddy/binaries/node/versions"/*/node.exe \
+    "${HOME//\\//}/.workbuddy/binaries/node/versions"/*/node.exe \
+    "C:/Program Files/nodejs/node.exe"; do
+    [ -x "$cand" ] && NODE_JS="$cand" && break
+  done
+  [ -z "$NODE_JS" ] && NODE_JS="node"
+fi
+NPM="${NPM:-}"
+if [ -z "$NPM" ]; then
+  for cand in \
+    "$(dirname "$NODE_JS")/../node_modules/npm/bin/npm-cli.js" \
+    "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js"; do
+    [ -e "$cand" ] && NPM="$cand" && break
+  done
+  [ -z "$NPM" ] && NPM="$(command -v npm 2>/dev/null || echo '')"
+fi
 DB_URL="postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_test"
 
 port_up() { # $1 = port
