@@ -108,7 +108,13 @@ test("Corrected defect label (CORRECT_DEFECT) + training candidate export", asyn
   expect(hit.ai_label).toBe(aiClass);
   expect(hit.human_label).toBe(corrected);
   expect(hit.agreement).toBe(false);
-  expect(hit.model_version).toBeTruthy();
+  // Phase 9 semantic fix: dataset / model / deployment identities are distinct.
+  // source_model_version is always set; the dataset/deployment fields must
+  // exist (legacy inspections created before the Phase 8 migration may have
+  // a null value, which is honest rather than fabricated).
+  expect(hit.source_model_version).toBeTruthy();
+  expect(hit).toHaveProperty("source_deployment_version");
+  expect(hit).toHaveProperty("source_dataset_version");
   expect(hit.image_url).toContain("/image");
 });
 

@@ -5,8 +5,9 @@ import { LivePage } from "./features/live/LivePage";
 import { TracePage } from "./features/trace/TracePage";
 import { ReviewQueuePage } from "./features/review/ReviewQueuePage";
 import { ModelOpsPage } from "./features/modelops/ModelOpsPage";
+import { CopilotPage } from "./features/copilot/CopilotPage";
 
-type Tab = "overview" | "live" | "review" | "trace" | "modelops";
+type Tab = "overview" | "live" | "review" | "trace" | "modelops" | "copilot";
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: "overview", label: "Production Overview" },
@@ -14,6 +15,7 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: "review", label: "Review Queue" },
   { key: "trace", label: "Quality Traceability" },
   { key: "modelops", label: "Model Operations" },
+  { key: "copilot", label: "Quality Copilot" },
 ];
 
 const queryClient = new QueryClient({
@@ -43,6 +45,7 @@ function Dashboard() {
         {tab === "review" ? <ReviewQueuePage /> : null}
         {tab === "trace" ? <TracePage /> : null}
         {tab === "modelops" ? <ModelOpsPage /> : null}
+        {tab === "copilot" ? <CopilotPage /> : null}
       </main>
     </div>
   );

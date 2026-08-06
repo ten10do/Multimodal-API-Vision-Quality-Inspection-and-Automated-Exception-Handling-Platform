@@ -1,6 +1,8 @@
 // REST client. All fetch URLs live here, never scattered in components.
 
 import type {
+  CopilotConversation,
+  CopilotResponse,
   DriftReport,
   HumanDecision,
   HumanFeedback,
@@ -165,4 +167,11 @@ export const api = {
     const qs = p.toString();
     return request(`/drift${qs ? `?${qs}` : ""}`);
   },
+
+  // ---- Phase 9 Quality Copilot ----
+  copilotQuery: (body: { conversation_id?: string; message: string }): Promise<CopilotResponse> =>
+    jsonRequest("/copilot/query", body),
+
+  copilotConversation: (id: string): Promise<CopilotConversation> =>
+    request(`/copilot/conversations/${id}`),
 };

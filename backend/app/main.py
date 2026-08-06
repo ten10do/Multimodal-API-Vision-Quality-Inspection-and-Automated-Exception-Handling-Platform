@@ -51,6 +51,9 @@ def create_app() -> FastAPI:
     from .api import mlops_monitoring
 
     app.include_router(mlops_monitoring.router)
+    from .api import copilot
+
+    app.include_router(copilot.router)
 
     @app.exception_handler(FastAPIHTTPException)
     async def http_error_handler(request: Request, exc: FastAPIHTTPException) -> JSONResponse:

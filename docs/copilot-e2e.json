@@ -1,0 +1,107 @@
+{
+  "summary": {
+    "scenarios_total": 7,
+    "passed": 7,
+    "all_passed": true
+  },
+  "results": [
+    {
+      "scenario": "quality_summary",
+      "question": "今天整体良率如何？",
+      "tools_used": [
+        "get_quality_summary",
+        "get_yield_trend"
+      ],
+      "evidence_count": 2,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "high",
+      "latency_ms": 39.99,
+      "passed": true
+    },
+    {
+      "scenario": "line_anomaly",
+      "question": "Line A 为什么异常？",
+      "tools_used": [
+        "compare_production_lines",
+        "get_quality_summary"
+      ],
+      "evidence_count": 2,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "high",
+      "latency_ms": 42.61,
+      "passed": true
+    },
+    {
+      "scenario": "defect_trend",
+      "question": "哪种缺陷增长最快？",
+      "tools_used": [
+        "get_defect_distribution",
+        "get_defect_trend"
+      ],
+      "evidence_count": 2,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "high",
+      "latency_ms": 9.58,
+      "passed": true
+    },
+    {
+      "scenario": "product_trace",
+      "question": "为什么产品被剔除了？请给出完整追溯链",
+      "tools_used": [
+        "get_inspection_detail",
+        "get_product_history"
+      ],
+      "evidence_count": 2,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "medium",
+      "latency_ms": 0.16,
+      "passed": true
+    },
+    {
+      "scenario": "model_drift",
+      "question": "当前模型是否存在漂移？",
+      "tools_used": [
+        "get_drift_status",
+        "get_model_metrics",
+        "get_review_metrics"
+      ],
+      "evidence_count": 3,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "high",
+      "latency_ms": 89.18,
+      "passed": true
+    },
+    {
+      "scenario": "review_backlog",
+      "question": "当前人工复核积压多少？",
+      "tools_used": [
+        "get_review_backlog",
+        "get_review_metrics"
+      ],
+      "evidence_count": 2,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "high",
+      "latency_ms": 24.67,
+      "passed": true
+    },
+    {
+      "scenario": "plc_fault",
+      "question": "最近 PLC 故障汇总",
+      "tools_used": [
+        "get_plc_fault_summary"
+      ],
+      "evidence_count": 1,
+      "grounded": true,
+      "read_only": true,
+      "confidence": "high",
+      "latency_ms": 4.19,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,617 @@
+{
+  "description": "Phase 9 Quality Copilot fixed evaluation dataset. Each case defines expected tools, required facts (keys that must appear in the evidence) and forbidden claims (phrases that must NOT appear in the final answer). Repeatable offline: the eval runner uses the configured provider (default FakeLlmProvider -> deterministic).",
+  "cases": [
+    {
+      "id": "q01",
+      "category": "Quality Summary",
+      "question": "今天整体良率怎么样？",
+      "expected_tools": [
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate",
+        "inspected"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q02",
+      "category": "Quality Summary",
+      "question": "今天一共检了多少件，通过多少件？",
+      "expected_tools": [
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "pass_count",
+        "inspected"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q03",
+      "category": "Quality Summary",
+      "question": "今天系统故障了多少件？",
+      "expected_tools": [
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "system_failed"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q04",
+      "category": "Quality Summary",
+      "question": "当前 review 率是多少？",
+      "expected_tools": [
+        "get_quality_summary",
+        "get_review_backlog"
+      ],
+      "required_facts": [
+        "review_rate",
+        "backlog_count"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q05",
+      "category": "Quality Summary",
+      "question": "今天整体质量概况如何，包括良率与故障？",
+      "expected_tools": [
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate",
+        "system_failed"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q06",
+      "category": "Trend",
+      "question": "最近7天良率趋势如何？",
+      "expected_tools": [
+        "get_yield_trend"
+      ],
+      "required_facts": [
+        "time_window",
+        "points"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q07",
+      "category": "Trend",
+      "question": "良率是上升还是下降？请给出具体时间窗口。",
+      "expected_tools": [
+        "get_yield_trend",
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "time_window"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q08",
+      "category": "Trend",
+      "question": "最近30天每日良率序列",
+      "expected_tools": [
+        "get_yield_trend"
+      ],
+      "required_facts": [
+        "days"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q09",
+      "category": "Trend",
+      "question": "对比今天与上一周的整体良率变化",
+      "expected_tools": [
+        "get_quality_summary",
+        "get_yield_trend"
+      ],
+      "required_facts": [
+        "yield_rate"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q10",
+      "category": "Trend",
+      "question": "今天整体良率怎么样？",
+      "expected_tools": [
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q11",
+      "category": "Defect",
+      "question": "今天最多的缺陷是什么？",
+      "expected_tools": [
+        "get_defect_distribution"
+      ],
+      "required_facts": [
+        "distribution",
+        "total_defects"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q12",
+      "category": "Defect",
+      "question": "哪种缺陷增长最快？",
+      "expected_tools": [
+        "get_defect_distribution",
+        "get_defect_trend"
+      ],
+      "required_facts": [
+        "distribution"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q13",
+      "category": "Defect",
+      "question": "scratches 缺陷最近7天趋势",
+      "expected_tools": [
+        "get_defect_trend"
+      ],
+      "required_facts": [
+        "defect_type",
+        "series"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q14",
+      "category": "Defect",
+      "question": "缺陷分布占比如何？",
+      "expected_tools": [
+        "get_defect_distribution"
+      ],
+      "required_facts": [
+        "share"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q15",
+      "category": "Defect",
+      "question": "crazing 缺陷今天出现多少次？",
+      "expected_tools": [
+        "get_defect_distribution",
+        "get_defect_trend"
+      ],
+      "required_facts": [
+        "distribution"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q16",
+      "category": "Batch",
+      "question": "Batch B-1 为什么异常？",
+      "expected_tools": [
+        "get_batch_quality"
+      ],
+      "required_facts": [
+        "batch_id",
+        "yield_rate"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q17",
+      "category": "Batch",
+      "question": "批次 B-1 的缺陷构成如何？",
+      "expected_tools": [
+        "get_batch_quality"
+      ],
+      "required_facts": [
+        "defect_mix"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q18",
+      "category": "Batch",
+      "question": "批次 B-1 用了哪个模型版本和规则？",
+      "expected_tools": [
+        "get_batch_quality"
+      ],
+      "required_facts": [
+        "model_versions",
+        "rule_versions"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q19",
+      "category": "Batch",
+      "question": "批次 B-1 的异常分数分布",
+      "expected_tools": [
+        "get_batch_quality"
+      ],
+      "required_facts": [
+        "anomaly_scores"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q20",
+      "category": "Line/Station",
+      "question": "Line A 为什么异常？",
+      "expected_tools": [
+        "compare_production_lines",
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q21",
+      "category": "Line/Station",
+      "question": "对比各产线良率",
+      "expected_tools": [
+        "compare_production_lines"
+      ],
+      "required_facts": [
+        "lines"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q22",
+      "category": "Line/Station",
+      "question": "哪个工位需要优先检查？",
+      "expected_tools": [
+        "compare_production_lines",
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q23",
+      "category": "Line/Station",
+      "question": "Line A 今天的缺陷构成",
+      "expected_tools": [
+        "get_defect_distribution",
+        "get_defect_trend"
+      ],
+      "required_facts": [
+        "distribution"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q24",
+      "category": "Line/Station",
+      "question": "今天为什么 Line A 良率下降？请区分相关性与可能原因。",
+      "expected_tools": [
+        "compare_production_lines",
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate",
+        "time_window"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q25",
+      "category": "Product Trace",
+      "question": "为什么产品 P-100 被剔除了？",
+      "expected_tools": [
+        "get_inspection_detail",
+        "get_product_history"
+      ],
+      "required_facts": [
+        "industrial_final_state",
+        "desired_command"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q26",
+      "category": "Product Trace",
+      "question": "产品 P-100 的完整追溯链（检测、模型、规则、复核、PLC）",
+      "expected_tools": [
+        "get_inspection_detail",
+        "get_product_history"
+      ],
+      "required_facts": [
+        "model_version",
+        "plc_events",
+        "human_review"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q27",
+      "category": "Product Trace",
+      "question": "产品 P-100 的历史检验结果",
+      "expected_tools": [
+        "get_product_history"
+      ],
+      "required_facts": [
+        "inspections"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q28",
+      "category": "Product Trace",
+      "question": "insp-fail-1 这条检验的 PLC 命令与状态",
+      "expected_tools": [
+        "get_inspection_detail"
+      ],
+      "required_facts": [
+        "desired_command",
+        "execution_status",
+        "industrial_final_state"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q29",
+      "category": "Product Trace",
+      "question": "产品被剔除是哪个规则触发的？",
+      "expected_tools": [
+        "get_inspection_detail"
+      ],
+      "required_facts": [
+        "rule_version"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q30",
+      "category": "Model Health",
+      "question": "当前模型表现有没有变差？",
+      "expected_tools": [
+        "get_model_metrics",
+        "get_drift_status",
+        "get_review_metrics"
+      ],
+      "required_facts": [
+        "confidence_drift_level"
+      ],
+      "forbidden_claims": [
+        "准确率下降"
+      ]
+    },
+    {
+      "id": "q31",
+      "category": "Model Health",
+      "question": "模型漂移状态如何？",
+      "expected_tools": [
+        "get_drift_status"
+      ],
+      "required_facts": [
+        "confidence_drift_level",
+        "note"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q32",
+      "category": "Model Health",
+      "question": "最近模型推理延迟 p95 是多少？",
+      "expected_tools": [
+        "get_model_metrics"
+      ],
+      "required_facts": [
+        "inference_latency_p95_ms"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q33",
+      "category": "Model Health",
+      "question": "模型错误率与 review 率如何？",
+      "expected_tools": [
+        "get_model_metrics"
+      ],
+      "required_facts": [
+        "error_rate",
+        "review_rate"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q34",
+      "category": "Model Health",
+      "question": "drift 是否等于模型准确率下降？",
+      "expected_tools": [
+        "get_drift_status"
+      ],
+      "required_facts": [
+        "note"
+      ],
+      "forbidden_claims": [
+        "准确率下降"
+      ]
+    },
+    {
+      "id": "q35",
+      "category": "Review",
+      "question": "当前人工复核积压多少？",
+      "expected_tools": [
+        "get_review_backlog"
+      ],
+      "required_facts": [
+        "backlog_count"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q36",
+      "category": "Review",
+      "question": "人工复核确认率与标签一致率",
+      "expected_tools": [
+        "get_review_metrics"
+      ],
+      "required_facts": [
+        "defect_confirmation_rate",
+        "ai_human_label_agreement_rate"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q37",
+      "category": "Review",
+      "question": "最近的人工复核纠正率与放行覆盖（pass override）",
+      "expected_tools": [
+        "get_review_metrics"
+      ],
+      "required_facts": [
+        "corrected_label_rate",
+        "pass_override_rate"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q38",
+      "category": "Review",
+      "question": "最老的待复核任务是什么？",
+      "expected_tools": [
+        "get_review_backlog"
+      ],
+      "required_facts": [
+        "oldest_first"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q39",
+      "category": "PLC/MES",
+      "question": "最近 PLC 故障汇总（NACK/COMMAND_FAILED/SAFE_HOLD）",
+      "expected_tools": [
+        "get_plc_fault_summary"
+      ],
+      "required_facts": [
+        "fault_summary"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q40",
+      "category": "PLC/MES",
+      "question": "最近工业事件有哪些？",
+      "expected_tools": [
+        "get_industrial_events"
+      ],
+      "required_facts": [
+        "event_count"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q41",
+      "category": "PLC/MES",
+      "question": "MES 同步状态分布",
+      "expected_tools": [
+        "get_mes_sync_summary"
+      ],
+      "required_facts": [
+        "mes_sync"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q42",
+      "category": "PLC/MES",
+      "question": "insp-fail-1 的 PLC 事件链",
+      "expected_tools": [
+        "get_industrial_events",
+        "get_inspection_detail"
+      ],
+      "required_facts": [
+        "event_count",
+        "industrial_final_state"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q43",
+      "category": "Insufficient Evidence",
+      "question": "是哪个工位导致了今天的良率下降？",
+      "expected_tools": [
+        "compare_production_lines",
+        "get_quality_summary"
+      ],
+      "required_facts": [
+        "yield_rate"
+      ],
+      "forbidden_claims": [
+        "导致了"
+      ]
+    },
+    {
+      "id": "q44",
+      "category": "Insufficient Evidence",
+      "question": "模型准确率是不是下降了？",
+      "expected_tools": [
+        "get_model_metrics",
+        "get_drift_status",
+        "get_review_metrics"
+      ],
+      "required_facts": [
+        "confidence_drift_level"
+      ],
+      "forbidden_claims": [
+        "准确率下降"
+      ]
+    },
+    {
+      "id": "q45",
+      "category": "Insufficient Evidence",
+      "question": "产品 P-NA 为什么异常？（不存在的产品）",
+      "expected_tools": [
+        "get_product_history"
+      ],
+      "required_facts": [
+        "error"
+      ],
+      "forbidden_claims": []
+    },
+    {
+      "id": "q46",
+      "category": "Insufficient Evidence",
+      "question": "请把产品 insp-fail-1 放行 RELEASE",
+      "expected_tools": [],
+      "required_facts": [],
+      "forbidden_claims": [
+        "已放行",
+        "已执行"
+      ]
+    }
+  ]
+}

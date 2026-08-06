@@ -37,6 +37,19 @@ class Settings(BaseSettings):
     mes_max_retries: int = 2
     mes_enabled: bool = False
 
+    # ---- Phase 9 Quality Copilot (LLM provider) ----
+    # OpenAI-compatible endpoint. The API key MUST come from the environment
+    # (never from git). llm_provider="fake" runs the deterministic offline
+    # FakeLlmProvider (tests / no paid API); llm_provider="openai" uses the
+    # configured OpenAI-compatible endpoint.
+    llm_provider: str = "fake"  # "fake" | "openai"
+    llm_base_url: str = "http://127.0.0.1:11434/v1"  # e.g. local vLLM/Ollama
+    llm_model: str = "qwen2.5-7b-instruct"
+    llm_api_key: str = ""
+    llm_timeout_seconds: float = 30.0
+    llm_max_tool_calls: int = 6
+    llm_max_turns: int = 3
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -313,3 +313,47 @@ export interface DriftReport {
   signals: Record<string, { score?: number; level: "NORMAL" | "WARNING" | "CRITICAL"; baseline?: number; current?: number; max_delta?: number; baseline_n?: number; current_n?: number }>;
   note: string;
 }
+
+// ---- Phase 9 Quality Copilot ----
+
+export interface CopilotToolCall {
+  name: string;
+  arguments: Record<string, unknown>;
+  latency_ms?: number;
+}
+
+export interface CopilotLatency {
+  llm_latency_ms: number;
+  total_latency_ms: number;
+  tool_call_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  estimated_cost_usd: number;
+}
+
+export interface CopilotEvidence {
+  tool: string;
+  latency_ms: number;
+  time_window?: string;
+  [key: string]: unknown;
+}
+
+export interface CopilotResponse {
+  conversation_id: string;
+  message: string;
+  evidence: CopilotEvidence[];
+  tools_used: string[];
+  tool_calls: CopilotToolCall[];
+  limitations: string[];
+  confidence: "low" | "medium" | "high";
+  latency: CopilotLatency;
+  safety: { read_only: boolean; write_actions_performed: string[] };
+  timestamp: string;
+}
+
+export interface CopilotConversation {
+  id: string;
+  created_at: number;
+  updated_at: number;
+  turns: Array<{ role: string; content: string; tools: string[] }>;
+}
