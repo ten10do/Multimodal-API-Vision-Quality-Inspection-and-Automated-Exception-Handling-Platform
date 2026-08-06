@@ -60,6 +60,17 @@ export interface Inspection {
   anomaly_model_version?: string | null;
   anomaly_regions?: Array<{ bbox_xyxy: number[]; bbox_normalized: number[]; area_ratio: number; region_score: number }> | null;
   fusion_class?: string | null;
+  // Phase 7 industrial (three-layer semantics)
+  desired_command?: string | null;
+  execution_status?: string | null;
+  industrial_state?: string | null;
+  industrial_final_state?: string | null;
+  plc_command?: string | null;
+  plc_status?: string | null;
+  plc_adapter_type?: string | null;
+  plc_reason_code?: string | null;
+  plc_latency_ms?: number | null;
+  mes_sync_status?: string | null;
 }
 
 export interface RealtimeStatus {

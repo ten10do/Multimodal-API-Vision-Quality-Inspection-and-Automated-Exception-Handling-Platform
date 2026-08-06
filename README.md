@@ -21,7 +21,8 @@ PyTorch / YOLOv8 / PatchCore / PaddleOCR / FastAPI / SQLAlchemy / WebSocket / Re
 - [x] Phase 4 Frontend Dashboard（React + Vite + TypeScript + ECharts，见 [docs/06-phase4-dashboard.md](docs/06-phase4-dashboard.md)）
 - [x] Phase 5 Human-in-the-loop Review（人工复核闭环，见 [docs/07-phase5-review.md](docs/07-phase5-review.md)）
 - [x] Phase 6 Unknown Anomaly Detection（PatchCore + Vision Fusion，见 [docs/09-phase6-report.md](docs/09-phase6-report.md)）
-- [ ] Phase 7 Dashboard Interactive
+- [x] Phase 7 Industrial Integration（PLC/MES 闭环，见 [docs/10-phase7-report.md](docs/10-phase7-report.md)）
+- [ ] Phase 8（规划中）
 
 ## 本地启动（Phase 2）
 

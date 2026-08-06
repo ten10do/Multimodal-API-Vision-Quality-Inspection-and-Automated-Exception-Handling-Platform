@@ -203,6 +203,33 @@ body {
   border: 1px solid rgba(56, 189, 248, 0.4);
 }
 
+/* ---- Phase 7 industrial state badges ----
+   NOT INTEGRATED / HELD / SAFE HOLD / REJECTED / RELEASED / COMMAND_FAILED
+   are visually distinct (13). */
+.badge-ok {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--pass);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.badge-warn {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--review);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--fail);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.badge-neutral {
+  background: rgba(100, 116, 139, 0.2);
+  color: #cbd5e1;
+  border: 1px dashed #64748b;
+}
+
 .sev {
   margin-left: 6px;
   font-size: 11px;

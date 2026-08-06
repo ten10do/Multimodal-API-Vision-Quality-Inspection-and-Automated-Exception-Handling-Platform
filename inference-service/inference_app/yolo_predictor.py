@@ -122,9 +122,11 @@ class YoloPredictor:
         boxes = results[0].boxes
         names = results[0].names
         if boxes is not None and len(boxes) > 0:
-            xyxy = boxes.xyxy.cpu().numpy()
-            confs = boxes.conf.cpu().numpy()
-            cls_ids = boxes.cls.cpu().numpy().astype(int)
+            # flatten to (N,) regardless of whether the runtime reports
+            # (N,1) (numpy >= 2.4 rejects int() on a 1-element array)
+            xyxy = boxes.xyxy.cpu().numpy().reshape(-1, 4)
+            confs = boxes.conf.cpu().numpy().reshape(-1)
+            cls_ids = boxes.cls.cpu().numpy().astype(int).reshape(-1)
             for x1, y1, x2, y2, conf, cls_id in zip(xyxy[:, 0], xyxy[:, 1], xyxy[:, 2], xyxy[:, 3], confs, cls_ids):
                 x1, y1, x2, y2 = self._clip_bbox(x1, y1, x2, y2, width, height)
                 area_px = float((x2 - x1) * (y2 - y1))

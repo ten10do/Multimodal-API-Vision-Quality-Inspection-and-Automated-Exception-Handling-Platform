@@ -91,6 +91,17 @@ class InspectionOut(BaseModel):
     anomaly_model_version: str | None = None
     anomaly_regions: list[dict] | None = None
     fusion_class: str | None = None
+    # Phase 7 industrial
+    desired_command: str | None = None
+    execution_status: str | None = None
+    industrial_state: str | None = None
+    industrial_final_state: str | None = None
+    plc_command: str | None = None
+    plc_status: str | None = None
+    plc_adapter_type: str | None = None
+    plc_reason_code: str | None = None
+    plc_latency_ms: float | None = None
+    mes_sync_status: str | None = None
 
 
 class InspectionDetail(InspectionOut):

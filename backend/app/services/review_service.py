@@ -293,6 +293,21 @@ class ReviewService:
         # single transaction: task resolve + decision + inspection final result
         await session.commit()
         task = await self.get_task(session, task_id)
+
+        # Phase 7: a human decision turns the HOLD into RELEASE / REJECT.
+        if task.inspection is not None:
+            from .industrial_service import IndustrialService
+
+            await IndustrialService().process_result(
+                session, task.inspection,
+                final_quality_result=final.value,
+                process_status="completed",
+                review_resolved=True,
+                review_decision=human_decision.value,
+                reviewed_by=reviewer,
+            )
+            await session.commit()
+
         schedule_broadcast(
             _review_event(
                 task, "review.resolved", reviewer=reviewer,

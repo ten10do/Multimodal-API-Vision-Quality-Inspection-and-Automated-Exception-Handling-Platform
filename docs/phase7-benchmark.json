@@ -1,0 +1,33 @@
+{
+  "benchmark_kind": "industrial command chain (real PLC/MES simulators)",
+  "decision_to_command_creation_latency_ms": 0.0022,
+  "command_to_plc_ack_latency_ms": {
+    "mean_ms": 239.8,
+    "p50_ms": 256.7,
+    "p95_ms": 276.26,
+    "n": 50
+  },
+  "mes_sync_latency_ms": {
+    "mean_ms": 257.25,
+    "p50_ms": 258.37,
+    "p95_ms": 271.09,
+    "n": 20
+  },
+  "mes_success_rate": 1.0,
+  "industrial_decision_total_latency_ms": {
+    "mean_ms": 844.78,
+    "p50_ms": 840.24,
+    "p95_ms": 951.55,
+    "n": 20
+  },
+  "command_success_rate": 1.0,
+  "command_retry_count": 0,
+  "duplicate_suppression_count": 50,
+  "safe_hold_count": 0,
+  "not_integrated_count": 0,
+  "sample_count": {
+    "plc": 50,
+    "mes": 20,
+    "industrial": 20
+  }
+}

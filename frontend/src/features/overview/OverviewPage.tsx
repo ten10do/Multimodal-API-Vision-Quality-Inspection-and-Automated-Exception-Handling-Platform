@@ -23,6 +23,23 @@ export function OverviewPage() {
   const trend = useMemo(() => qualityTrend(inspections), [inspections]);
   const latencies = useMemo(() => latencySeries(inspections), [inspections]);
 
+  // Phase 7: industrial final states over the recent window (13)
+  const industrial = useMemo(() => {
+    const c = { released: 0, rejected: 0, held: 0, safeHold: 0, notIntegrated: 0, mesFailed: 0, plcFault: 0 };
+    for (const i of inspections) {
+      const st = i.industrial_final_state ?? i.industrial_state;
+      if (st === "RELEASED") c.released += 1;
+      else if (st === "REJECTED") c.rejected += 1;
+      else if (st === "HELD") c.held += 1;
+      else if (st === "SAFE_HOLD" || st === "COMMAND_FAILED") {
+        c.safeHold += 1;
+        c.plcFault += 1;
+      } else if (st === "NOT_INTEGRATED") c.notIntegrated += 1;
+      if (i.mes_sync_status === "FAILED") c.mesFailed += 1;
+    }
+    return c;
+  }, [inspections]);
+
   if (statusQ.isLoading || recentQ.isLoading) return <LoadingState label="加载实时指标…" />;
   if (statusQ.isError || recentQ.isError) {
     const msg = (statusQ.error as Error)?.message ?? "backend unavailable";
@@ -66,6 +83,19 @@ export function OverviewPage() {
         />
         <MetricCard label="P95 E2E Latency" value={stats.p95LatencyMs === null ? "—" : `${stats.p95LatencyMs.toFixed(0)} ms`} />
         <MetricCard label="Model Version" value={modelVersion} />
+      </section>
+
+      <section className="metric-grid">
+        <span className="freshness-note" style={{ gridColumn: "1 / -1" }}>
+          工业执行（Phase 7，最近 {inspections.length} 次）：NOT INTEGRATED / HELD / SAFE HOLD / REJECTED / RELEASED 语义互斥
+        </span>
+        <MetricCard label="Released" value={industrial.released} tone="success" />
+        <MetricCard label="Rejected" value={industrial.rejected} tone="danger" />
+        <MetricCard label="Held" value={industrial.held} tone="warn" />
+        <MetricCard label="Safe Hold" value={industrial.safeHold} tone="danger" hint="PLC 故障/离线/系统失败" />
+        <MetricCard label="Not Integrated" value={industrial.notIntegrated} hint="PLC 未启用，非故障" />
+        <MetricCard label="PLC Fault" value={industrial.plcFault} tone="danger" />
+        <MetricCard label="MES Sync Failed" value={industrial.mesFailed} tone="danger" />
       </section>
 
       <section className="chart-grid">

@@ -39,6 +39,16 @@ def to_inspection_out(inspection: Inspection) -> InspectionOut:
         anomaly_model_version=inspection.anomaly_model_version,
         anomaly_regions=inspection.anomaly_regions,
         fusion_class=inspection.fusion_class,
+        desired_command=inspection.desired_command,
+        execution_status=inspection.execution_status,
+        industrial_state=inspection.industrial_state,
+        industrial_final_state=inspection.industrial_final_state,
+        plc_command=inspection.plc_command,
+        plc_status=inspection.plc_status,
+        plc_adapter_type=inspection.plc_adapter_type,
+        plc_reason_code=inspection.plc_reason_code,
+        plc_latency_ms=inspection.plc_latency_ms,
+        mes_sync_status=inspection.mes_sync_status,
     )
 
 

@@ -74,10 +74,13 @@ test("UNKNOWN_ANOMALY review: claim, consume anomaly info, confirm defect", asyn
   expect(hit.ai_label).toBeNull(); // no YOLO defect: label is new knowledge
 });
 
-test("anomaly heatmap endpoint serves PNG for a resolved anomaly review", async ({ page }) => {
+test("anomaly heatmap endpoint serves PNG for a resolved anomaly review", async () => {
   const target = await pendingAnomalyTask();
   const resp = await fetch(`${BACKEND}${target.anomaly_map_url}`);
   expect(resp.status).toBe(200);
-  const buf = Buffer.from(await resp.arrayBuffer());
-  expect(buf.subarray(0, 4).toString("hex")).toBe("89504e47"); // PNG magic
+  const buf = new Uint8Array(await resp.arrayBuffer());
+  const hex = Array.from(buf.subarray(0, 4))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  expect(hex).toBe("89504e47"); // PNG magic
 });

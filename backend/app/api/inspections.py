@@ -69,6 +69,14 @@ async def create_inspection(
             if failed is not None:
                 event = _build_event(failed, event_type="inspection.failed", error=exc.message)
                 schedule_broadcast(event.to_broadcast())
+                # Phase 7 fail-safe: a processing failure NEVER releases;
+                # it enters SAFE_HOLD with a system reason code.
+                from ..services.industrial_service import IndustrialService
+
+                await IndustrialService().process_result(
+                    session, failed, final_quality_result=None, process_status="failed"
+                )
+                await session.commit()
         raise HTTPException(status_code=exc.http_status, detail=_err(exc.code, exc.message)) from exc
 
     eager = await _load_detail(session, inspection.inspection_id)
@@ -91,6 +99,21 @@ async def create_inspection(
     from ..services.review_service import ReviewService
 
     await ReviewService().create_task_for_inspection(session, eager)
+
+    # Phase 7: translate the final result into an industrial PLC command
+    # (PASS->RELEASE, FAIL->REJECT, REVIEW->HOLD) and sync MES.
+    # REVIEW inspections have final_quality_result=None until a human
+    # resolves them; the desired command must reflect the AI result
+    # (REVIEW -> HOLD -> HELD), never the unknown_state fallback.
+    from ..services.industrial_service import IndustrialService
+
+    initial_result = eager.quality_result.value if eager.quality_result else None
+    await IndustrialService().process_result(
+        session, eager,
+        final_quality_result=initial_result,
+        process_status="completed",
+    )
+    await session.commit()
     return detail
 
 

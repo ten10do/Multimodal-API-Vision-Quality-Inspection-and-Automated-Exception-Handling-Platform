@@ -103,10 +103,53 @@ export function InspectionDetailPanel({ inspection, onClose }: { inspection: Ins
                   </>
                 ) : null}
               </dl>
+
+              <h4>工业执行（Phase 7）</h4>
+              <dl className="kv">
+                <dt>Desired Command</dt>
+                <dd>{inspection.desired_command ?? "—"}</dd>
+                <dt>Execution Status</dt>
+                <dd className="mono">{inspection.execution_status ?? "—"}</dd>
+                <dt>Industrial State</dt>
+                <dd>
+                  <IndustrialBadge state={inspection.industrial_final_state ?? inspection.industrial_state ?? null} />
+                </dd>
+                <dt>PLC Adapter</dt>
+                <dd className="mono">{inspection.plc_adapter_type ?? "—"}</dd>
+                <dt>PLC Latency</dt>
+                <dd>{inspection.plc_latency_ms == null ? "—" : `${Math.round(inspection.plc_latency_ms)} ms`}</dd>
+                <dt>MES Sync</dt>
+                <dd>
+                  <MesBadge status={inspection.mes_sync_status ?? null} />
+                </dd>
+                <dt>Reason Code</dt>
+                <dd className="mono">{inspection.plc_reason_code ?? "—"}</dd>
+              </dl>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+const STATE_STYLE: Record<string, string> = {
+  NOT_INTEGRATED: "badge-neutral",
+  HELD: "badge-warn",
+  SAFE_HOLD: "badge-danger",
+  REJECTED: "badge-danger",
+  RELEASED: "badge-ok",
+  COMMAND_FAILED: "badge-danger",
+};
+
+function IndustrialBadge({ state }: { state: string | null }) {
+  if (!state) return <span>—</span>;
+  const cls = STATE_STYLE[state] ?? "badge-neutral";
+  return <span className={`badge ${cls}`}>{state}</span>;
+}
+
+function MesBadge({ status }: { status: string | null }) {
+  if (!status) return <span>—</span>;
+  const cls = status === "SYNCED" ? "badge-ok" : status === "PENDING" ? "badge-warn" : "badge-danger";
+  return <span className={`badge ${cls}`}>{status}</span>;
 }

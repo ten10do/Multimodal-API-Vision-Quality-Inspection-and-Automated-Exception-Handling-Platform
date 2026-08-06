@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
+
+# Phase 7: unit tests run with the PLC/MES integration disabled (the
+# industrial closed loop is covered by dedicated integration tests with the
+# real simulators on 8501/8502).
+os.environ.setdefault("IVQC_PLC_ENABLED", "false")
+os.environ.setdefault("IVQC_MES_ENABLED", "false")
 
 import httpx
 import pytest

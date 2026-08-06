@@ -21,7 +21,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("inspections", sa.Column("anomaly_score", sa.Float(), nullable=True))
+    # NOTE: anomaly_score already exists on inspections (0001_create_core_tables
+    # carries it, matching the models); adding it here too would fail on a
+    # fresh database. Only the columns 0001 does NOT have are added.
     op.add_column("inspections", sa.Column("anomaly_threshold", sa.Float(), nullable=True))
     op.add_column("inspections", sa.Column("is_anomalous", sa.Boolean(), nullable=True))
     op.add_column("inspections", sa.Column("anomaly_map_path", sa.String(length=512), nullable=True))
@@ -39,5 +41,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     for col in ("anomaly_map_url", "anomaly_regions", "is_anomalous", "anomaly_threshold", "anomaly_score"):
         op.drop_column("review_tasks", col)
-    for col in ("fusion_class", "anomaly_model_version", "anomaly_map_path", "is_anomalous", "anomaly_threshold", "anomaly_score"):
+    for col in ("fusion_class", "anomaly_model_version", "anomaly_map_path", "is_anomalous", "anomaly_threshold"):
         op.drop_column("inspections", col)

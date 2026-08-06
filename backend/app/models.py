@@ -84,6 +84,23 @@ class Inspection(TimestampMixin, Base):
     anomaly_regions: Mapped[list | None] = mapped_column(JSON, nullable=True)
     fusion_class: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
+    # ---- Phase 7 industrial state ----
+    # Three-layer semantics (see docs): desired_command (what the system
+    # wants the field layer to do), execution_status (whether the command was
+    # actually sent/acked), industrial_state / industrial_final_state (the
+    # product's real field state). NOT_INTEGRATED means the PLC was never
+    # engaged; it is never faked as HELD / SAFE_HOLD / RELEASED / REJECTED.
+    desired_command: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    execution_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    industrial_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    industrial_final_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    plc_command: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    plc_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    plc_adapter_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    plc_reason_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    plc_latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mes_sync_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
     product: Mapped[Product] = relationship(back_populates="inspections")
     defects: Mapped[list["Defect"]] = relationship(back_populates="inspection", cascade="all, delete-orphan")
 
@@ -212,3 +229,30 @@ class ReviewCorrection(TimestampMixin, Base):
     reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     decision: Mapped[ReviewDecision] = relationship(back_populates="corrections")
+
+
+class PlcEvent(TimestampMixin, Base):
+    """PLC command event log (Phase 7). Answers "why was this product
+    rejected?" with the full chain: Image -> AI -> Rule -> Final Quality
+    Result -> PLC Command -> PLC ACK."""
+
+    __tablename__ = "plc_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    command_id: Mapped[str] = mapped_column(String(128), index=True, nullable=False)
+    product_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    inspection_id: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    command: Mapped[str] = mapped_column(String(16), nullable=False)
+    # three-layer semantics: what we wanted (desired_command) vs what
+    # actually happened (execution_status) vs the product field state
+    desired_command: Mapped[str] = mapped_column(String(16), nullable=False)
+    execution_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    industrial_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    adapter_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    request_payload: Mapped[dict] = mapped_column(JSON, nullable=False)
+    response: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING")
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reason_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
