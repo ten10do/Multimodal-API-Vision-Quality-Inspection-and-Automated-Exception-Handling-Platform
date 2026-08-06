@@ -118,6 +118,16 @@ class InspectionService:
         inspection.inference_request_id = request_id
         inspection.image_path = data.filename
 
+        # ---- Phase 8: deployment traceability (8D) ----
+        # stamp which AI stack version judged this inspection; answers
+        # "which model stack decided this batch?"
+        from ..mlops.manifest import current_deployment_version
+
+        try:
+            inspection.deployment_version = current_deployment_version()
+        except Exception:  # noqa: BLE001 - manifest should exist; never block inspection
+            logger.exception("deployment manifest unavailable; inspection untagged")
+
         # ---- Phase 6 anomaly snapshot (6D) ----
         anomaly = getattr(contract, "anomaly", None)
         # the fusion class (incl. the YOLO-only fallback when the anomaly

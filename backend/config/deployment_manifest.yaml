@@ -1,0 +1,44 @@
+# Deployment manifest (Phase 8, 8D/8E)
+#
+# This pins the whole AI stack that judges every inspection. The backend
+# stamps inspections.deployment_version from vision_stack_version; the
+# inference service resolves + SHA256-validates the artifacts below before
+# declaring READY. Never start a production inference service from a
+# version-less artifact.
+
+vision_stack_version: "2026.08.1"
+
+yolo:
+  model: neu-yolov8s
+  version: "1.0.0"
+  model_type: yolo
+  artifact_uri: "inference-service/models/best.pt"
+  sha256: "9c9409aae38b18dbb3fb0bd12fb7cdccd64032347b2ea07b9a2656d7134b48a1"
+  dataset_version: "neu-det-yolo-v1"
+  training_run_id: "phase1-baseline"
+  metrics: { mAP50: 0.82, recall: 0.78, latency_p95_ms: 21.5 }
+
+patchcore:
+  model: mvtec-bottle-patchcore
+  version: "1.0.0"
+  model_type: patchcore
+  artifact_uri: "inference-service/models/patchcore-bottle/bank.npz"
+  sha256: "79375393d1881815c0aee17b683c971e349550da164e534c6187cabc766e3033"
+  dataset_version: "mvtec-bottle-v1"
+  training_run_id: "phase6-patchcore-baseline"
+  metrics:
+    image_auroc: 1.0
+    pixel_auroc: 0.986
+    aup_pro: 0.955
+    latency_ms: 755.0
+  # CRITICAL domain note (8F): this bank was trained on MVTec bottle, NOT on
+  # steel. It is a benchmark baseline only and must never be promoted to a
+  # steel production model while steel_domain_validated=false.
+  domain: mvtec-bottle
+  steel_domain_validated: false
+
+fusion:
+  version: "1.0"
+
+quality_rules:
+  version: 1

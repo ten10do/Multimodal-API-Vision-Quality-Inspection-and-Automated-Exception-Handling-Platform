@@ -75,6 +75,10 @@ class Inspection(TimestampMixin, Base):
     image_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    # ---- Phase 8 MLOps: deployment traceability (8D) ----
+    deployment_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    model_registry_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("model_registry.id"), nullable=True)
+
     # ---- Phase 6 anomaly (PatchCore) + vision fusion ----
     anomaly_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     anomaly_threshold: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -256,3 +260,41 @@ class PlcEvent(TimestampMixin, Base):
     latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
     reason_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ModelRegistry(TimestampMixin, Base):
+    """Model identity + lifecycle (Phase 8).
+
+    status lifecycle: CANDIDATE -> STAGING -> PRODUCTION -> ARCHIVED.
+    At most one PRODUCTION row per model_name is enforced in the DB by a
+    partial unique index (status='PRODUCTION').
+    """
+
+    __tablename__ = "model_registry"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    model_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    model_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    model_type: Mapped[str] = mapped_column(String(32), nullable=False)  # yolo | patchcore
+    artifact_uri: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    artifact_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    dataset_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    training_run_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="CANDIDATE")
+    metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    domain_validated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    notes: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+
+class DatasetVersion(TimestampMixin, Base):
+    """Dataset versioning: manifest + SHA256 (8K). A model must be able to
+    trace back to an exact dataset version."""
+
+    __tablename__ = "dataset_versions"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    dataset_version: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    manifest_uri: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(512), nullable=True)

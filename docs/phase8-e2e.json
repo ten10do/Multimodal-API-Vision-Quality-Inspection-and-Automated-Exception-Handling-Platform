@@ -1,0 +1,32 @@
+{
+  "register_v1": {
+    "id": "7c858860-c267-473d-9398-53f743522ffb",
+    "status": "CANDIDATE"
+  },
+  "promote_v1": {
+    "version": "1.0.0",
+    "gate_passed": true
+  },
+  "inspection_traceability": {
+    "inspection_id": "insp-17095d449325",
+    "deployment_version": "2026.08.1",
+    "production": "1.0.0"
+  },
+  "model_metrics": {
+    "inference_count": 609,
+    "error_rate": 0.0,
+    "p95": 570.37
+  },
+  "promote_v2": {
+    "version": "2.0.0"
+  },
+  "rollback": {
+    "production_after_rollback": "1.0.0"
+  },
+  "drift": {
+    "overall": "CRITICAL"
+  },
+  "feedback": {
+    "resolved": 18
+  }
+}

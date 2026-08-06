@@ -21,6 +21,12 @@ WEIGHTS = Path(os.environ.get("IVQC_WEIGHTS", WEIGHTS_DEFAULT))
 PATCHCORE_BANK_DEFAULT = Path(__file__).resolve().parents[1] / "models" / "patchcore-bottle" / "bank.npz"
 PATCHCORE_BANK = Path(os.environ.get("IVQC_PATCHCORE_BANK", str(PATCHCORE_BANK_DEFAULT)))
 
+# Phase 8 (8D/8E): the deployment manifest pins the whole AI stack. The
+# inference service must resolve + SHA256-validate the artifacts against it
+# BEFORE declaring READY.
+PROJECT_ROOT = Path(__file__).resolve().parents[1].parent
+MANIFEST_PATH = Path(os.environ.get("IVQC_MANIFEST", str(PROJECT_ROOT / "backend" / "config" / "deployment_manifest.yaml")))
+
 _predictor: YoloPredictor | None = None
 _anomaly: PatchCorePredictor | None = None
 _load_error: str | None = None
@@ -66,6 +72,49 @@ def get_anomaly_predictor() -> PatchCorePredictor | None:
         return None
 
 
+def verify_deployment() -> list[str]:
+    """Phase 8 (8E): read the deployment manifest, resolve artifacts, check
+    SHA256, load both models and run a smoke inference. Returns the list of
+    problems; an empty list means the stack is deployable."""
+    problems: list[str] = []
+    try:
+        import sys
+
+        sys.path.insert(0, str(PROJECT_ROOT / "backend"))
+        from app.mlops.manifest import load_manifest, validate_artifacts
+
+        manifest = load_manifest(MANIFEST_PATH)
+        problems.extend(validate_artifacts(manifest, PROJECT_ROOT))
+    except Exception as exc:  # noqa: BLE001
+        problems.append(f"manifest load failed: {exc}")
+    if problems:
+        return problems
+    # load + smoke both models
+    try:
+        get_predictor()
+    except Exception as exc:  # noqa: BLE001
+        problems.append(f"yolo load/smoke failed: {exc}")
+    try:
+        get_anomaly_predictor()
+    except Exception as exc:  # noqa: BLE001
+        problems.append(f"patchcore load failed: {exc}")
+    if _anomaly is None:
+        problems.append("patchcore model not loaded (anomaly channel is part of the pinned stack)")
+    return problems
+
+
+def _deployment_version() -> str:
+    try:
+        import sys
+
+        sys.path.insert(0, str(PROJECT_ROOT / "backend"))
+        from app.mlops.manifest import load_manifest
+
+        return str(load_manifest(MANIFEST_PATH).get("vision_stack_version", "?"))
+    except Exception:  # noqa: BLE001
+        return "?"
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="IndustrialVision-QC Inference Service", version="0.2.0")
 
@@ -79,11 +128,11 @@ def create_app() -> FastAPI:
 
     @app.get("/ready")
     async def ready() -> dict:
-        try:
-            get_predictor()
-            return {"status": "ready", "model_loaded": True, "anomaly_loaded": _anomaly is not None}
-        except ModelLoadError:
-            return {"status": "not_ready", "model_loaded": False, "anomaly_loaded": _anomaly is not None}
+        problems = verify_deployment()
+        if problems:
+            return {"status": "not_ready", "model_loaded": _predictor is not None,
+                    "anomaly_loaded": _anomaly is not None, "problems": problems}
+        return {"status": "ready", "model_loaded": True, "anomaly_loaded": True, "deployment_version": _deployment_version()}
 
     @app.post("/v1/infer", response_model=VisionResult)
     async def infer(

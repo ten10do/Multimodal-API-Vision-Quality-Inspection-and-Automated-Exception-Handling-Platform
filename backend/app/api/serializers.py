@@ -49,6 +49,7 @@ def to_inspection_out(inspection: Inspection) -> InspectionOut:
         plc_reason_code=inspection.plc_reason_code,
         plc_latency_ms=inspection.plc_latency_ms,
         mes_sync_status=inspection.mes_sync_status,
+        deployment_version=inspection.deployment_version,
     )
 
 

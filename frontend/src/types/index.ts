@@ -243,3 +243,71 @@ export interface TrainingCandidate {
   model_version: string | null;
   timestamp: string;
 }
+
+// ---- Phase 8 MLOps ----
+
+export type ModelStatus = "CANDIDATE" | "STAGING" | "PRODUCTION" | "ARCHIVED";
+
+export interface RegistryModel {
+  id: string;
+  model_name: string;
+  model_version: string;
+  model_type: "yolo" | "patchcore";
+  artifact_uri: string | null;
+  artifact_sha256: string | null;
+  dataset_version: string | null;
+  training_run_id: string | null;
+  status: ModelStatus;
+  metrics: Record<string, number>;
+  domain_validated: boolean;
+  promoted_at: string | null;
+  notes: string | null;
+  created_at: string | null;
+}
+
+export interface GateCheck {
+  check: string;
+  passed: boolean;
+  got: number | boolean | null;
+  required: number | boolean;
+  blocked_by_domain?: boolean;
+}
+
+export interface GateResult {
+  passed: boolean;
+  checks: GateCheck[];
+  blocked: string[];
+}
+
+export interface ModelMetrics {
+  model_version: string | null;
+  window_count: number;
+  inference_count: number;
+  error_count: number;
+  error_rate: number | null;
+  inference_latency_avg_ms: number | null;
+  inference_latency_p95_ms: number | null;
+  review_rate: number | null;
+  confidence_distribution: number[];
+  defect_distribution: Record<string, number>;
+  anomaly_score_distribution: number[];
+}
+
+export interface HumanFeedback {
+  filters: { model_version: string | null; defect_type: string | null; line: string | null; station: string | null };
+  resolved: number;
+  defect_confirmation_rate: number | null;
+  ai_human_label_agreement_rate: number | null;
+  pass_override_rate: number | null;
+  corrected_label_rate: number | null;
+  per_defect: Record<string, { defect_confirmation_rate: number | null; ai_human_label_agreement_rate: number | null; pass_override_rate: number | null; corrected_label_rate: number | null; resolved: number }>;
+}
+
+export interface DriftReport {
+  model_version: string | null;
+  baseline_window: { from: string; to: string; n: number };
+  current_window: { from: string; to: string; n: number };
+  overall: "NORMAL" | "WARNING" | "CRITICAL";
+  signals: Record<string, { score?: number; level: "NORMAL" | "WARNING" | "CRITICAL"; baseline?: number; current?: number; max_delta?: number; baseline_n?: number; current_n?: number }>;
+  note: string;
+}

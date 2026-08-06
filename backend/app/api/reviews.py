@@ -206,6 +206,9 @@ async def training_candidates(
                 review_reason=decision.reason,
                 model_version=inspection.model_version,
                 anomaly_score=task.anomaly_score,
+                # Phase 8 (8J): reference the exact dataset version the model
+                # was trained on (the deployment stamp is the fallback)
+                dataset_version=inspection.deployment_version,
                 timestamp=decision.created_at,
             )
         )
@@ -215,7 +218,8 @@ async def training_candidates(
         writer = csv.DictWriter(
             buffer,
             fieldnames=["inspection_id", "image_url", "ai_label", "human_label",
-                        "ai_confidence", "agreement", "review_reason", "model_version", "anomaly_score", "timestamp"],
+                        "ai_confidence", "agreement", "review_reason", "model_version",
+                        "anomaly_score", "dataset_version", "timestamp"],
         )
         writer.writeheader()
         for c in candidates:

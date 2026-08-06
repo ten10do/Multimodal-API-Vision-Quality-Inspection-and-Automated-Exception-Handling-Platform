@@ -102,6 +102,8 @@ class InspectionOut(BaseModel):
     plc_reason_code: str | None = None
     plc_latency_ms: float | None = None
     mes_sync_status: str | None = None
+    # Phase 8 MLOps
+    deployment_version: str | None = None
 
 
 class InspectionDetail(InspectionOut):
@@ -181,6 +183,9 @@ class TrainingCandidate(BaseModel):
     review_reason: str | None
     model_version: str | None
     anomaly_score: float | None = None
+    # Phase 8 (8J): the retraining candidate set must reference an exact
+    # dataset version so a future training run is traceable.
+    dataset_version: str | None = None
     timestamp: datetime
 
 

@@ -45,6 +45,12 @@ def create_app() -> FastAPI:
     app.include_router(realtime.rt_router)
     app.include_router(realtime.ws_router)
     app.include_router(reviews.router)
+    from .api import models_registry
+
+    app.include_router(models_registry.router)
+    from .api import mlops_monitoring
+
+    app.include_router(mlops_monitoring.router)
 
     @app.exception_handler(FastAPIHTTPException)
     async def http_error_handler(request: Request, exc: FastAPIHTTPException) -> JSONResponse:

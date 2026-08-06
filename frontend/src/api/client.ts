@@ -1,10 +1,14 @@
 // REST client. All fetch URLs live here, never scattered in components.
 
 import type {
+  DriftReport,
   HumanDecision,
+  HumanFeedback,
   Inspection,
   InspectionFilters,
+  ModelMetrics,
   RealtimeStatus,
+  RegistryModel,
   ReviewMetrics,
   ReviewTask,
   TrainingCandidate,
@@ -117,4 +121,48 @@ export const api = {
 
   trainingCandidates: (kind: "all" | "corrected" | "disagreed" | "low_confidence" = "all"): Promise<TrainingCandidate[]> =>
     request(`/training-candidates?kind=${kind}`),
+
+  // ---- Phase 8 MLOps ----
+  listModels: (status?: string, modelType?: string): Promise<RegistryModel[]> => {
+    const p = new URLSearchParams();
+    if (status) p.set("status", status);
+    if (modelType) p.set("model_type", modelType);
+    const qs = p.toString();
+    return request(`/models${qs ? `?${qs}` : ""}`);
+  },
+
+  registerModel: (body: Record<string, unknown>): Promise<RegistryModel> =>
+    jsonRequest(`/models`, body),
+
+  promoteModel: (id: string, requiredDomain: string, thresholds?: Record<string, number> | null): Promise<RegistryModel & { gate: { passed: boolean; blocked: string[]; checks: unknown[] } }> =>
+    jsonRequest(`/models/${id}/promote`, { required_domain: requiredDomain, thresholds: thresholds ?? null }),
+
+  gateModel: (id: string, requiredDomain: string): Promise<{ model: string; gate: { passed: boolean; blocked: string[]; checks: unknown[] } }> =>
+    jsonRequest(`/models/${id}/gate`, { required_domain: requiredDomain }),
+
+  rollbackModel: (modelName: string, modelVersion: string): Promise<RegistryModel> =>
+    jsonRequest(`/models/rollback`, { model_name: modelName, model_version: modelVersion }),
+
+  modelMetrics: (modelVersion?: string): Promise<ModelMetrics> => {
+    const p = new URLSearchParams();
+    if (modelVersion) p.set("model_version", modelVersion);
+    const qs = p.toString();
+    return request(`/model-metrics${qs ? `?${qs}` : ""}`);
+  },
+
+  humanFeedback: (params: { model_version?: string; defect_type?: string; line?: string; station?: string } = {}): Promise<HumanFeedback> => {
+    const p = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v) p.set(k, v);
+    }
+    const qs = p.toString();
+    return request(`/human-feedback${qs ? `?${qs}` : ""}`);
+  },
+
+  driftReport: (modelVersion?: string): Promise<DriftReport> => {
+    const p = new URLSearchParams();
+    if (modelVersion) p.set("model_version", modelVersion);
+    const qs = p.toString();
+    return request(`/drift${qs ? `?${qs}` : ""}`);
+  },
 };
