@@ -18,6 +18,7 @@ from sqlalchemy.orm import selectinload
 
 from ..database import get_session
 from ..enums import HumanDecision
+from ..mlops.manifest import dataset_version_for_model
 from ..models import Inspection, ReviewDecision, ReviewTask
 from ..schemas import ReviewMetricsOut, ReviewTaskOut, TrainingCandidate
 from ..services.review_service import ReviewConflictError, ReviewService, ReviewValidationError
@@ -204,11 +205,14 @@ async def training_candidates(
                 ai_confidence=ai_conf,
                 agreement=agreement,
                 review_reason=decision.reason,
-                model_version=inspection.model_version,
                 anomaly_score=task.anomaly_score,
-                # Phase 8 (8J): reference the exact dataset version the model
-                # was trained on (the deployment stamp is the fallback)
-                dataset_version=inspection.deployment_version,
+                # semantic fix (Phase 9): dataset identity != deployment
+                # identity. source_dataset_version is the TRAINING dataset
+                # from the pinned manifest; source_deployment_version is the
+                # ONLINE AI stack that was live when the sample was judged.
+                source_dataset_version=dataset_version_for_model(inspection.model_name),
+                source_model_version=inspection.model_version,
+                source_deployment_version=inspection.deployment_version,
                 timestamp=decision.created_at,
             )
         )
@@ -218,8 +222,10 @@ async def training_candidates(
         writer = csv.DictWriter(
             buffer,
             fieldnames=["inspection_id", "image_url", "ai_label", "human_label",
-                        "ai_confidence", "agreement", "review_reason", "model_version",
-                        "anomaly_score", "dataset_version", "timestamp"],
+                        "ai_confidence", "agreement", "review_reason",
+                        "anomaly_score", "source_dataset_version",
+                        "source_model_version", "source_deployment_version",
+                        "timestamp"],
         )
         writer.writeheader()
         for c in candidates:

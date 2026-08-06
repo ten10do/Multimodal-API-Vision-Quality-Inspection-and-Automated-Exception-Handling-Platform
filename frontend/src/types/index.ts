@@ -240,7 +240,9 @@ export interface TrainingCandidate {
   ai_confidence: number | null;
   agreement: boolean;
   review_reason: string | null;
-  model_version: string | null;
+  source_dataset_version: string | null;
+  source_model_version: string | null;
+  source_deployment_version: string | null;
   timestamp: string;
 }
 

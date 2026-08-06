@@ -174,6 +174,13 @@ class ReviewMetricsOut(BaseModel):
 
 
 class TrainingCandidate(BaseModel):
+    """Retraining candidate manifest (8J / 9 semantic fix).
+
+    The three source identities are kept distinct:
+      source_dataset_version      - training dataset identity (manifest 8K)
+      source_model_version        - which model version judged this sample
+      source_deployment_version   - which online AI stack (8D) was live
+    """
     inspection_id: str
     image_url: str | None
     ai_label: str | None
@@ -181,11 +188,10 @@ class TrainingCandidate(BaseModel):
     ai_confidence: float | None
     agreement: bool
     review_reason: str | None
-    model_version: str | None
     anomaly_score: float | None = None
-    # Phase 8 (8J): the retraining candidate set must reference an exact
-    # dataset version so a future training run is traceable.
-    dataset_version: str | None = None
+    source_dataset_version: str | None = None
+    source_model_version: str | None = None
+    source_deployment_version: str | None = None
     timestamp: datetime
 
 

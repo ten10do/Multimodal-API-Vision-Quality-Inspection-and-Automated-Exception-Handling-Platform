@@ -456,7 +456,10 @@ async def test_training_candidates_export(client, db_session, stub_infer):
     assert candidates[0]["human_label"] == "scratches"
     assert candidates[0]["ai_confidence"] == 0.42
     assert candidates[0]["agreement"] is False
-    assert candidates[0]["model_version"] == "phase1-baseline"
+    # semantic fix (Phase 9): three distinct source identities
+    assert candidates[0]["source_model_version"] == "phase1-baseline"
+    assert candidates[0]["source_deployment_version"] == "2026.08.1"
+    assert candidates[0]["source_dataset_version"] is not None
     assert candidates[0]["image_url"].endswith("/image")
 
     csv_resp = await client.get("/api/v1/training-candidates", params={"kind": "all", "format": "csv"})

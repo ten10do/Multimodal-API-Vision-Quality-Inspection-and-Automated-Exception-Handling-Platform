@@ -67,6 +67,22 @@ def current_deployment_version(path: Path | None = None) -> str:
     return str(get_manifest(path)["vision_stack_version"])
 
 
+def dataset_version_for_model(model_name: str | None) -> str | None:
+    """Resolve the training dataset identity for a model name from the pinned
+    manifest (8D/8K). Substring match (e.g. inspection.model_name="yolov8s"
+    -> yolo section "neu-yolov8s" -> dataset_version "neu-det-yolo-v1").
+    Returns None when the model is not part of the pinned stack."""
+    if not model_name:
+        return None
+    m = get_manifest()
+    for section in ("yolo", "patchcore"):
+        sec = m[section]
+        pinned = str(sec.get("model", ""))
+        if model_name == pinned or model_name.lower() in pinned.lower():
+            return sec.get("dataset_version")
+    return None
+
+
 def validate_artifacts(manifest: dict[str, Any], root: Path) -> list[str]:
     """Return a list of problems. Empty list means all artifacts pass.
 

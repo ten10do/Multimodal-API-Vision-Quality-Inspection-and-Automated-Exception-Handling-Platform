@@ -92,7 +92,13 @@ async def test_model_metrics_and_human_feedback_endpoints(client, db_session):
     assert "data drift only" in d.json()["note"]
 
 
-async def test_training_candidate_has_dataset_version(client, db_session):
+async def test_training_candidate_source_identity_fields(client, db_session):
+    """Semantic fix (Phase 9): dataset / model / deployment identities are
+    distinct fields on the retraining candidate manifest."""
     cands = (await client.get("/api/v1/training-candidates", params={"kind": "all"})).json()
     for c in cands:
-        assert "dataset_version" in c
+        assert "source_dataset_version" in c
+        assert "source_model_version" in c
+        assert "source_deployment_version" in c
+        assert "dataset_version" not in c
+        assert "model_version" not in c
