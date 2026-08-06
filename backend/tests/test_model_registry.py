@@ -194,6 +194,7 @@ def test_manifest_load_and_artifacts():
     assert m["fusion"]["version"] == "1.0"
 
 
+@pytest.mark.artifact
 def test_manifest_artifact_sha256_matches_files():
     """The manifest pins real artifact hashes; the deployed files must match
     (8E: a wrong hash must make the stack not-ready, not silently load)."""

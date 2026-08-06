@@ -12,7 +12,7 @@ full run on this machine (Windows 11 + RTX 5060, Python 3.11 venv).
 | OPC UA real gate (fail-fast, never skip) | `IVQC_REQUIRE_SIMULATORS=1 ... pytest backend/tests/test_industrial_integration.py -m opcua -q` | 7 | 0 | **0** | OPC UA server 8503 |
 | GPU inference (YOLO + PatchCore) | `pytest -m gpu` (local) + `docs/phase6-benchmark.json` | pass | 0 | — | RTX 5060, **local gate** |
 | Fault Injection E2E (6 scenarios) | `bash scripts/run_clean.sh python scripts/fault_injection_e2e.py` | 6/6 | 0 | 0 | live stack |
-| MLOps unit (registry/gate/drift/manifest) | `pytest backend/tests/test_model_registry.py` | 14 | 0 | 0 | host |
+| MLOps unit (registry/gate/drift/manifest) | `pytest backend/tests/test_model_registry.py` | 14 | 0 | 0 | host（含 `test_manifest_artifact_sha256_matches_files`：需本地模型 artifact，**local gate**，CI 显式排除 `-m "not ... and not artifact"`，见 backend-ci.yml） |
 | MLOps API + faults | `pytest backend/tests/test_mlops_api.py backend/tests/test_mlops_faults.py` | 9 | 0 | 0 | host |
 | MLOps real E2E (register→promote→rollback) | `bash scripts/run_clean.sh python scripts/mlops_e2e.py` | pass | 0 | 0 | live stack |
 | Copilot unit/adversarial | `pytest backend/tests/test_copilot.py` | 20 | 0 | 0 | host |

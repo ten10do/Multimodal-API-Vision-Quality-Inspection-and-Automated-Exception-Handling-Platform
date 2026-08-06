@@ -67,7 +67,7 @@ jobs:
           IVQC_MES_ENABLED: "false"
         run: |
           python -m pytest backend/tests inference-service/tests/test_vision_contract.py \
-            -m "not integration and not gpu and not opcua and not industrial-e2e" -q
+            -m "not integration and not gpu and not opcua and not industrial-e2e and not artifact" -q
 
       - name: Python syntax check (backend / scripts / simulator / inference)
         run: |
