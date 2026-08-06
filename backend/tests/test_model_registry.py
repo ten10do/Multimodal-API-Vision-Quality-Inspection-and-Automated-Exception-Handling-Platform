@@ -53,6 +53,18 @@ def test_yolo_gate_reject_low_metric():
     assert any("mAP50" in b for b in g.blocked)
 
 
+def test_yolo_gate_reject_excessive_latency():
+    """Acceptance audit (minimal addition, disclosed): the gate code already
+    rejects latency_p95 above threshold; this pins it with a dedicated test."""
+    g = evaluate(
+        "yolo",
+        metrics={"mAP50": 0.82, "recall": 0.78, "latency_p95_ms": 5000.0},
+        domain_validated=True, required_domain="steel",
+    )
+    assert g.passed is False
+    assert any("latency" in b for b in g.blocked)
+
+
 def test_patchcore_domain_mismatch_rejects_perfect_auroc():
     """The MVTec baseline has image_auroc=1.0 but steel_domain_validated=false:
     it must NEVER be promoted as a steel production model (8F)."""
