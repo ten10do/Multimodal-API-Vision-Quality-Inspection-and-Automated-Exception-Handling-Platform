@@ -1,0 +1,82 @@
+name: backend-ci
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "packages/**"
+      - "pytest.ini"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: backend unit + clean-DB migration + contract
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: vision_qc_ci
+          POSTGRES_USER: vision_qc
+          POSTGRES_PASSWORD: vision_qc
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vision_qc"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Clean-DB migration (alembic upgrade head on fresh PostgreSQL)
+        env:
+          IVQC_DATABASE_URL: postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5432/vision_qc_ci
+        run: |
+          cd backend
+          python -m alembic upgrade head
+          python - <<'EOF'
+          import asyncio
+          from sqlalchemy import text
+          from app.database import engine
+          async def main():
+              async with engine.connect() as c:
+                  tables = [r[0] for r in (await c.execute(text(
+                      "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename"))).fetchall()]
+                  assert "inspections" in tables and "model_registry" in tables and "plc_events" in tables
+                  print("migration OK, tables:", len(tables))
+              await engine.dispose()
+          asyncio.run(main())
+          EOF
+
+      - name: Backend unit tests (no GPU/OPC UA/industrial simulators required)
+        env:
+          IVQC_DATABASE_URL: postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5432/vision_qc_ci
+          IVQC_PLC_ENABLED: "false"
+          IVQC_MES_ENABLED: "false"
+        run: |
+          python -m pytest backend/tests inference-service/tests/test_vision_contract.py \
+            -m "not integration and not gpu and not opcua and not industrial-e2e" -q
+
+      - name: Python syntax check (backend / scripts / simulator / inference)
+        run: |
+          python -m compileall -q backend/app backend/tests scripts simulator inference-service/inference_app
+
+  # ----------------------------------------------------------------------
+  # Local-only integration gates (documented, never silently skipped):
+  #   - GPU inference (torch + CUDA)      -> run locally, see docs/test-matrix.md
+  #   - OPC UA real server/adapter E2E    -> local gate (8503), fail-fast
+  #   - Industrial simulators + PG E2E    -> local gate (8501/8502/8503)
+  #   - Fault-injection E2E / MLOps E2E   -> local scripts
+  # These cannot be reproduced reliably on hosted runners; they are listed
+  # in docs/test-matrix.md as "local integration gates" with exact commands.

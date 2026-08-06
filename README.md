@@ -1,193 +1,238 @@
 # IndustrialVision-QC
 
-面向智能制造的工业机器视觉质检与质量闭环平台（求职作品集项目）。
+> An end-to-end industrial AI quality inspection platform combining
+> **known-defect detection** (YOLO), **unknown-anomaly detection** (PatchCore),
+> **human review**, **PLC/MES industrial integration**, **model governance**
+> and **evidence-grounded quality analytics** (read-only Quality Copilot).
 
-## 定位
+A portfolio-grade, fully testable implementation of a real factory quality
+control software chain — from camera frame to field-layer execution — with
+every industrial device simulated in software (see `docs/`).
 
-完整的工业质检软件链路：模拟相机采集 → YOLO 已知缺陷检测 → PatchCore 未知异常检测 → OCR 产品编号 → 质量规则引擎 → PASS/REVIEW/FAIL → 人工复核 → PLC/MES 模拟联动 → 质量追溯 → 模型监控 → 数据反馈 → 持续优化。
+![Overview](docs/screenshots/01-overview.png)
+*Real system screenshots are in [docs/screenshots/](docs/screenshots/).*
 
-全部工业设备以软件模拟，总成本控制在 300 至 500 元以内。
+## Core capabilities
 
-## 技术栈
+- 🔵 **Known-defect detection** — YOLOv8s on NEU-DET steel surface (6 classes,
+  bbox + confidence + severity).
+- 🔵 **Unknown-anomaly detection** — PatchCore memory-bank anomaly scoring +
+  heatmap; fused with YOLO (`UNKNOWN_ANOMALY` when defect + anomaly disagree).
+- 🟠 **Quality rule engine** — maps vision results to `PASS / FAIL / REVIEW`
+  with explicit, versioned rules.
+- 🟢 **Human-in-the-loop review** — claim/resolve review tasks; AI evidence is
+  never overwritten; every decision is audited (who/when/why, corrections).
+- 🔴 **Industrial integration** — HTTP **and** OPC UA PLC adapters + MES sync;
+  idempotent commands by `command_id`; fail-safe (`SAFE_HOLD`, never an
+  unverified `RELEASE`); `NOT_INTEGRATED` is the honest default when the field
+  layer is absent.
+- 🧠 **MLOps & model governance** — Model Registry (CANDIDATE → STAGING →
+  PRODUCTION → ARCHIVED, single-PRODUCTION enforced), deployment manifest with
+  artifact SHA-256, safe model loading (manifest → checksum → smoke → READY),
+  promotion gate with **domain validation**, production monitoring, drift
+  detection (PSI/KS), retraining candidate manifests, registry-driven rollback.
+- 💬 **Quality Copilot** — a **read-only** natural-language quality analysis
+  assistant: bounded tool-calling over a fixed allowlist, evidence-first
+  answers, deterministic numeric grounding (unsupported claims = 0), strict
+  causality wording, prompt-injection boundaries.
+- 🖥️ **Dashboard** — React/TypeScript: Production Overview, Live Inspection
+  (WebSocket), Quality Traceability, Review Queue, Model Operations, Quality
+  Copilot.
 
-PyTorch / YOLOv8 / PatchCore / PaddleOCR / FastAPI / SQLAlchemy / WebSocket / Redis / PostgreSQL / MinIO / React / TypeScript / ECharts / Docker Compose / pytest / GitHub Actions / MLflow / Prometheus / Grafana
+## Architecture
 
-## 当前状态
+See [docs/architecture.md](docs/architecture.md) for the full diagram with the
+four responsibility boundaries (AI decision / Human decision / Final quality
+result / Industrial execution).
 
-- [x] Phase 0 需求与架构基线（见 [docs/00-phase0-baseline.md](docs/00-phase0-baseline.md)）
-- [x] Phase 1 Vision MVP（YOLOv8s + NEU-DET，见 [docs/02-phase1-report.md](docs/02-phase1-report.md)）
-- [x] Phase 2 Backend MVP（FastAPI + PostgreSQL + Rule Engine + Inference HTTP API，见本文件与 docs）
-- [x] Phase 3 Realtime Pipeline（Camera Simulator + Orchestrator + WebSocket，见 [docs/05-phase3-benchmark.md](docs/05-phase3-benchmark.md)）
-- [x] Phase 4 Frontend Dashboard（React + Vite + TypeScript + ECharts，见 [docs/06-phase4-dashboard.md](docs/06-phase4-dashboard.md)）
-- [x] Phase 5 Human-in-the-loop Review（人工复核闭环，见 [docs/07-phase5-review.md](docs/07-phase5-review.md)）
-- [x] Phase 6 Unknown Anomaly Detection（PatchCore + Vision Fusion，见 [docs/09-phase6-report.md](docs/09-phase6-report.md)）
-- [x] Phase 7 Industrial Integration（PLC/MES 闭环，见 [docs/10-phase7-report.md](docs/10-phase7-report.md)）
-- [x] Phase 8 MLOps & Model Governance（Model Registry + MLflow + Drift，见 [docs/11-phase8-report.md](docs/11-phase8-report.md)）
-- [x] Phase 9 Quality Copilot（只读自然语言质量分析，见 [docs/12-phase9-report.md](docs/12-phase9-report.md)）
+```
+Camera Simulator
+   │  frame
+   ▼
+Realtime Queue / Orchestrator
+   │
+   ▼
+Inference Service ── YOLO (known defects) + PatchCore (anomaly) ──► Vision Fusion
+   │
+   ▼
+Quality Rule Engine ── PASS / FAIL / REVIEW (final quality result)
+   │
+   ▼
+PostgreSQL ◄── WebSocket ──► Dashboard   (DB is the source of truth)
+   │
+   ├──► Human Review (claim / resolve, audited)
+   ├──► Industrial Integration: HTTP PLC · OPC UA · MES (idempotent, fail-safe)
+   ├──► MLOps: Registry · Deployment Manifest · Monitoring · Drift · Rollback
+   └──► Quality Copilot (read-only, evidence-grounded, no write tools)
+```
 
-## 本地启动（Phase 2）
+## End-to-end workflow
 
-依赖：Python 3.11 venv（已冻结在 `model-training/requirements.txt` / `backend/requirements.txt`）、Docker Desktop。
+1. Simulator frame → inference service: YOLO detections + PatchCore anomaly.
+2. Fusion + rule engine → final quality result (PASS / FAIL / REVIEW).
+3. Persisted to PostgreSQL; dashboard updates via WebSocket.
+4. REVIEW → human review task → human confirm/correct/pass (audited).
+5. Final result → PLC command (RELEASE / REJECT / HOLD) → ACK → MES sync;
+   unknown state → `SAFE_HOLD` (never RELEASE).
+6. MLOps stamps model + deployment version on every inspection; drift and
+   monitoring aggregates are served from the same DB.
+7. Copilot answers questions with tool-grounded evidence only.
+
+## Tech stack
+
+| Layer | Technologies |
+|---|---|
+| Models | PyTorch, YOLOv8 (ultralytics), PatchCore (wide_resnet50_2) |
+| Backend | Python 3.11, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2, uvicorn |
+| Realtime | WebSocket (async), httpx pooled client |
+| Industrial | asyncua 2.x (OPC UA), HTTP adapters, bounded retries |
+| MLOps | MLflow (file store), custom registry/drift/manifest, deterministic grounding |
+| Frontend | React 18, TypeScript, Vite, @tanstack/react-query, ECharts |
+| Infra | PostgreSQL 16 (Docker, host 5433), Docker Compose, GitHub Actions |
+| QA | pytest (+asyncio), Playwright, Vitest, alembic clean-DB migration |
+
+> Honest note: Redis / MinIO / Prometheus / Grafana / OCR were **not** used in
+> the final system. Monitoring is served via API aggregation from PostgreSQL
+> (not a TSDB), storage is the local filesystem provider, and there is no OCR.
+> See the Capability Matrix below.
+
+## Key engineering decisions
+
+The 13 most valuable decisions (each with rationale and measured impact) are
+documented in [docs/engineering-decisions.md](docs/engineering-decisions.md).
+Highlights:
+
+- AI result / Human result / Final result are **three separate fields**.
+- **DB is the source of truth**; WebSocket is only a notification channel.
+- Reusing one `httpx.AsyncClient` cut E2E latency ~**8.8×** (561.7 ms → 63.6 ms).
+- `NOT_INTEGRATED` ≠ `SAFE_HOLD` — never fabricate a field state.
+- OPC UA **namespace-index hard-coding bug** caught by a real integration gate.
+- **Silent skip → fail-fast** gate policy (a skipped gate is not a pass).
+- Deployment / model / dataset **versions kept distinct**.
+- Copilot is **evidence-first and read-only** by construction.
+
+## Benchmark
+
+Unified summary: [docs/benchmark-summary.md](docs/benchmark-summary.md).
+Selected numbers (RTX 5060 8 GB / CPU fallback noted where relevant):
+
+| Benchmark | Result |
+|---|---|
+| YOLO inference (RTX 5060) | mean 15.4 ms · p50 13.3 ms · p95 21.5 ms |
+| YOLO NEU-DET | mAP50 0.82 · recall 0.78 (steel domain) |
+| PatchCore MVTec bottle | Image AUROC 1.000 · Pixel 0.986 · AUPRO 0.955 (benchmark domain only) |
+| E2E pipeline (GPU, pooled client) | throughput 4.85/s · P50 47.4 ms · P95 73.8 ms |
+| PLC ACK / MES sync | mean 240 ms / 257 ms; command success 1.0; duplicate suppression 50/50 |
+| Copilot deterministic eval (46 cases) | tool selection 1.0 · grounding 1.0 · **unsupported claims 0.0** · P95 70 ms |
+
+## Quick Start
 
 ```bash
-# 1. 基础设施：PostgreSQL（Docker）
+# 1. infrastructure (PostgreSQL 16 on host port 5433)
 docker compose up -d postgres
 
-# 2. 数据库迁移（从空库完整建表）
-cd backend
-../.venv/Scripts/python.exe -m alembic upgrade head
-cd ..
+# 2. one-command demo (simulators + inference + backend + frontend + seed)
+bash scripts/demo_up.sh          # infrastructure in Docker, GPU inference on host
 
-# 3. 种子质量规则（幂等）
-../.venv/Scripts/python.exe scripts/seed_quality_rules.py
-
-# 4. 推理服务（独立 HTTP 进程，默认 8100 端口）
-cd inference-service
-../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --host 0.0.0.0 --port 8100
-cd ..
-
-# 5. 后端 API（默认 8000 端口）
-cd backend
-../.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000
-cd ..
+# 3. health check
+bash scripts/run_clean.sh python scripts/health_check.py
 ```
 
-验证：
+Open http://127.0.0.1:5173 → Overview. The demo seed creates deterministic
+scenarios (known defect / unknown anomaly / human review / PLC hold-release /
+monitoring / copilot-ready data) — it is a **demo fixture**, not production
+data ([docs/10-phase7-report.md](docs/10-phase7-report.md) documents the
+honest limits, e.g. PatchCore steel-domain accuracy is not validated).
 
-- API 文档 http://localhost:8000/docs
-- 推理服务健康检查 http://localhost:8100/health
+GPU inference stays **on the host** (Windows + RTX); Docker runs PostgreSQL.
+See [docs/10-phase7-report.md](docs/10-phase7-report.md) for the environment
+notes (Bash-session DLL isolation via `scripts/run_clean.sh`).
 
-上传一张测试图片触发完整链路：
+## Tests
 
-```bash
-curl -s -X POST http://localhost:8000/api/v1/inspections \
-  -F "file=@model-training/datasets/neu-det-yolo/test/images/crazing_101.jpg" \
-  -F "product_id=NEU-0001" -F "production_line=line-a" -F "station=qc-01"
-```
+| Suite | Command | Count |
+|---|---|---|
+| Backend unit (incl. MLOps, Copilot, semantics) | `bash scripts/run_clean.sh python -m pytest backend/tests/ simulator/tests/ inference-service/tests/ -q` | 156 passed |
+| Industrial integration (PG + simulators, fail-fast) | `IVQC_REQUIRE_SIMULATORS=1 ... pytest backend/tests/test_industrial_integration.py backend/tests/test_review_concurrency_pg.py -m "integration or opcua or industrial-e2e"` | 18/18, 0 skipped |
+| Fault-injection E2E | `bash scripts/run_clean.sh python scripts/fault_injection_e2e.py` | 6/6 |
+| Copilot deterministic eval (46 fixed cases) | `bash scripts/run_clean.sh python scripts/copilot_eval.py` | targets met (unsupported=0) |
+| Copilot real E2E (7 scenarios) | `bash scripts/run_clean.sh python scripts/copilot_e2e.py` | 7/7 |
+| Frontend vitest | `cd frontend && npm test` | 33/33 |
+| Browser E2E (Playwright) | `cd frontend && npx playwright test e2e/` | 18/18 |
 
-## Realtime Pipeline 启动（Phase 3）
+Full matrix with commands / counts / environment: [docs/test-matrix.md](docs/test-matrix.md).
+GPU, OPC UA and industrial-simulator gates run **locally** (documented gates,
+never silently skipped in CI — see [.github/workflows/](.github/workflows/)).
 
-```bash
-# 1. 推理服务（独立进程，GPU）
-cd inference-service
-../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --port 8100
-cd ..
-
-# 2. 后端（指向容器 PostgreSQL）
-cd backend
-IVQC_DATABASE_URL=postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_dev \
-IVQC_INFERENCE_SERVICE_URL=http://127.0.0.1:8100 \
-../.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000
-cd ..
-
-# 3. Camera Simulator + Orchestrator（通过 Backend API 进入系统）
-.venv/Scripts/python.exe -m simulator.run_pipeline \
-  --images 60 --interval-ms 500 --workers 2 --queue-size 20 \
-  --backend-url http://127.0.0.1:8000 --batch batch-demo-001
-```
-
-实时事件订阅（WebSocket）：
-
-```bash
-# 用 websocat 或任意 WS 客户端连接
-ws://127.0.0.1:8000/api/v1/ws/inspections
-```
-
-实时指标：`GET http://127.0.0.1:8000/api/v1/realtime/status`。
-
-测试库准备（可复现，仅操作容器内 industrialvision_test）：
-
-```bash
-.venv/Scripts/python.exe scripts/prepare_test_db.py --recreate
-```
-
-## Frontend Dashboard 启动与演示（Phase 4）
-
-依赖：Node 22.22.2 + npm。依赖安装使用锁文件（CI 验证通过，详见 Gate 2 说明）。
-
-```bash
-cd frontend
-# 标准安装（基于 package-lock.json，CI 干净 runner 验证 npm ci / npm test / npm run build 全绿）
-npm ci --no-audit --no-fund
-npm exec playwright install chromium
-
-# 启动顺序：推理服务 → 后端 → 模拟器 → 前端
-cd ../inference-service
-../.venv/Scripts/python.exe -m uvicorn inference_app.api:app --port 8100
-
-cd ../backend
-IVQC_DATABASE_URL=postgresql+asyncpg://vision_qc:vision_qc@127.0.0.1:5433/industrialvision_test \
-IVQC_INFERENCE_SERVICE_URL=http://127.0.0.1:8100 \
-../.venv/Scripts/python.exe -m uvicorn app.main:app --port 8000
-
-cd ..
-.venv/Scripts/python.exe -m simulator.run_pipeline --interval-ms 500 --workers 2 --backend-url http://127.0.0.1:8000 --batch demo-p4 --loop
-
-cd frontend
-"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" run dev
-# 浏览器访问 http://127.0.0.1:5173
-```
-
-演示截图（含真实链路数据）：
-
-```bash
-cd frontend
-NODE_OPTIONS="" "C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" e2e/demo.cjs
-# 截图输出到 docs/screenshots/01-overview.png ... 05-overview-running.png
-```
-
-前端测试：
-
-```bash
-"C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" test          # vitest 27 项
-NODE_OPTIONS="" "C:/Users/EDY/.workbuddy/binaries/node/versions/22.22.2/node.exe" "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" exec playwright test  # 浏览器 E2E 5 项
-```
-
-## Frontend 依赖可复现性（Gate 2）
-
-标准安装路径为 `npm ci`（基于已提交的 `frontend/package-lock.json`），已在
-GitHub Actions 双 runner（ubuntu-latest + windows-latest）上验证：
+## Project structure
 
 ```
-npm ci → verify proxy-agents dist → npm test → npm run build  全部通过
+backend/            FastAPI: rules, review, industrial, MLOps, Copilot, alembic
+inference-service/  YOLO + PatchCore + fusion; manifest-verified /ready
+simulator/          camera pipeline + HTTP PLC / MES / OPC UA simulators
+frontend/           React + Vite dashboard + Playwright e2e
+packages/           shared vision-contract
+scripts/            run_clean.sh, fault_injection_e2e, mlops_e2e, copilot_eval,
+                    copilot_e2e, health_check, demo_up, demo_seed, backfill_mlflow
+model-training/     training + datasets (ignored artifacts)
+docs/               phase reports 0-12 + benchmarks + engineering guides
+copilot-eval/       fixed 46-case evaluation dataset
 ```
 
-本机（Windows + npm 11.16.0 + WorkBuddy safe-delete shim 注入 NODE_OPTIONS）
-存在宿主特异性问题：`http-proxy-agent` / `agent-base` / `https-proxy-agent`
-三个包的 `dist/index.js` 在 npm 解包时丢失，导致 vitest 无法启动。证据：
+## Honest Capability Matrix
 
-- 干净目录 + 全新 npm cache 下 `npm ci` 复现（非缓存问题）；
-- 同一 lockfile 在 GitHub Actions 干净 runner（含 windows-latest）上
-  `npm ci` 完整正常，dist 文件校验通过；
-- 根因指向本机 host FS 层 / safe-delete shim 对 npm 解包的干扰。
+| Capability | Status |
+|---|---|
+| YOLO steel defect detection (NEU-DET) | ✅ Verified (mAP50 0.82) |
+| PatchCore MVTec-bottle benchmark | ✅ Verified (Image AUROC 1.000) |
+| PatchCore steel-domain accuracy | ⚠️ **Not validated** — cross-domain baseline only |
+| Human-in-the-loop review | ✅ Verified |
+| HTTP PLC integration | ✅ Verified |
+| OPC UA integration | ✅ Verified (real server → adapter → persistence gate) |
+| MES integration | ✅ Verified |
+| Model Registry / single-PRODUCTION / Rollback | ✅ Verified |
+| Deployment manifest + SHA-256 safe loading | ✅ Verified |
+| Promotion gate + domain validation | ✅ Verified (MVTec AUROC 1.0 blocked for steel) |
+| Drift detection (PSI/KS, drift ≠ degradation) | ✅ Verified |
+| Copilot deterministic eval (46 cases) | ✅ Verified (unsupported claims = 0) |
+| Copilot real-LLM provider smoke | ⏳ **Pending external endpoint** (`REAL_LLM_GATE_NOT_RUN`) |
+| Redis / MinIO / Prometheus / Grafana / OCR | ❌ Not used (by design) |
 
-本机复现该问题时，可先应用临时补丁（从 registry tarball 补齐 3 个文件），
-该补丁**不是**标准安装步骤；标准步骤以 CI 验证的 `npm ci` 为准。此外本机
-运行 vite build / playwright 等会自行清理临时目录的工具时，需
-`NODE_OPTIONS=""` 以避开 safe-delete shim 对临时目录回收的拦截。
+Two items are **explicitly not hidden**:
+- **PatchCore domain mismatch**: the MVTec-bottle baseline is a benchmark only;
+  `steel_domain_validated=false` blocks promotion to a steel production model.
+- **Real LLM gate not run**: `OpenAiLlmProvider` is implemented and the 5-case
+  gate is defined, but no local/cloud OpenAI-compatible endpoint or API key
+  exists on this machine → `REAL_LLM_GATE_NOT_RUN` (external integration
+  pending). `FakeLlmProvider` remains the deterministic CI/eval provider.
 
-## 测试
+## Limitations
 
-```bash
-# 单元层（默认，不加载模型、不依赖外部服务）
-.venv/Scripts/python.exe -m pytest
+1. PatchCore is a cross-domain MVTec baseline; steel-domain accuracy is **not
+   validated** (honest boundary, see [docs/09-phase6-report.md](docs/09-phase6-report.md)).
+2. Real-LLM Copilot smoke is pending an external endpoint (`REAL_LLM_GATE_NOT_RUN`).
+3. PLC / MES / OPC UA are **simulated**; field deployment requires real
+   gateways (the adapters and idempotency protocol are transport-level).
+4. Conversation context and Copilot stats caching are in-memory (single
+   worker; TTL-based). No Redis.
+5. GPU inference runs on the host (Windows + RTX), not inside Docker.
+6. The environment requires `scripts/run_clean.sh` for torch processes
+   (Bash-session DLL isolation), see [docs/10-phase7-report.md](docs/10-phase7-report.md).
 
-# 集成层（需推理服务 + PostgreSQL 已启动）
-.venv/Scripts/python.exe -m pytest -m integration
+## Roadmap
 
-# GPU 层
-.venv/Scripts/python.exe -m pytest -m gpu
-```
+- Real-LLM Copilot gate once an endpoint/API key is available (5-case gate
+  already defined in [docs/12-phase9-report.md](docs/12-phase9-report.md)).
+- Steel-domain PatchCore training + domain validation (replaces the MVTec
+  baseline).
+- Redis-backed cache / multi-worker conversation store; optional Prometheus
+  exposition for large-scale monitoring.
+- Real PLC / MES gateway adapters for field pilots.
 
-## 目录
+---
 
-```
-backend/            FastAPI 模块化单体
-inference-service/  YOLO + PatchCore + OCR 推理服务
-simulator/          Camera / PLC / MES 模拟器
-frontend/           React + Vite + TypeScript + ECharts
-model-training/     训练与评估脚本
-monitoring/         监控配置
-docs/               架构与工程文档
-legacy/             已归档的 vision-qc-agent（多模态 LLM 路线）
-```
+Phase docs: [docs/](docs/) — every phase has a report with decisions,
+benchmarks and honest known-issues. Interview preparation:
+[docs/interview-guide.md](docs/interview-guide.md) ·
+[docs/resume-material.md](docs/resume-material.md) ·
+[docs/demo-script.md](docs/demo-script.md).

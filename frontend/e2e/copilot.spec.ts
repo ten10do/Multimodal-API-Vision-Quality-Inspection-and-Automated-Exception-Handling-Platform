@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 
-const BACKEND = "http://127.0.0.1:8000";
 const FRONTEND = "http://127.0.0.1:5173";
 
 test("Quality Copilot page answers a question with evidence", async ({ page }) => {
