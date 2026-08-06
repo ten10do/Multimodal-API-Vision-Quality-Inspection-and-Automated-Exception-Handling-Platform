@@ -89,9 +89,17 @@ class OpcUaPlcAdapter:
 
     name = "opcua"
 
-    def __init__(self, endpoint: str = "opc.tcp://127.0.0.1:8503", timeout_seconds: float = 3.0) -> None:
+    # Stable contract namespace URI of the IVQC PLC simulator. The namespace
+    # INDEX is allocated by the server at startup (currently 2) and must never
+    # be hard-coded; the adapter resolves URI -> index dynamically at connect
+    # time and falls back to browsing by browse name for foreign servers.
+    NS_URI = "urn:ivqc:plc"
+
+    def __init__(self, endpoint: str = "opc.tcp://127.0.0.1:8503", timeout_seconds: float = 3.0,
+                 ns_uri: str = NS_URI) -> None:
         self.endpoint = endpoint
         self.timeout = timeout_seconds
+        self.ns_uri = ns_uri
 
     async def send_command(self, command: IndustrialCommand) -> PlcCommandResult:
         import json
@@ -103,11 +111,48 @@ class OpcUaPlcAdapter:
             client = Client(self.endpoint, timeout=self.timeout)
             await client.connect()
             try:
-                plc = await client.nodes.objects.get_child("0:Plc")
-                result = await plc.call_method("0:execute", json.dumps(command.to_payload()))
+                # Resolve the Plc object WITHOUT any namespace-index
+                # hard-coding: a fixed "0:Plc" browse path (or a fixed ns=2
+                # index) raises BadNoMatch whenever the server registers the
+                # object under a different index. Strategy:
+                #   1. preferred: declared namespace URI -> index (the index
+                #      is server-allocated and read at connect time)
+                #   2. fallback: any object whose browse name is "Plc"
+                uri_index = None
+                try:
+                    namespaces = await client.get_namespace_array()
+                    if self.ns_uri in namespaces:
+                        uri_index = namespaces.index(self.ns_uri)
+                except Exception:  # noqa: BLE001 - URI resolution is best-effort
+                    uri_index = None
+                candidates = []
+                for obj in await client.nodes.objects.get_children():
+                    bn = await obj.read_browse_name()
+                    if bn.Name == "Plc":
+                        candidates.append(obj)
+                if not candidates:
+                    raise RuntimeError("Plc object not found in address space")
+                plc = None
+                if uri_index is not None:
+                    for cand in candidates:
+                        if cand.nodeid.NamespaceIndex == uri_index:
+                            plc = cand
+                            break
+                plc = plc or candidates[0]
+                execute = None
+                for m in await plc.get_methods():
+                    mb = await m.read_browse_name()
+                    if mb.Name == "execute":
+                        execute = m
+                        break
+                if execute is None:
+                    raise RuntimeError("execute method not found on Plc")
+                result = await plc.call_method(execute, json.dumps(command.to_payload()))
                 text = str(result)
             finally:
                 await client.disconnect()
+        except PlcNack:
+            raise
         except Exception as exc:  # noqa: BLE001 - transport failure -> fail-safe
             raise PlcUnreachable(f"opcua unreachable: {exc}") from exc
         latency = (time.perf_counter() - started) * 1000.0

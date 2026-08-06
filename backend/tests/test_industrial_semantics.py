@@ -23,6 +23,8 @@ from sqlalchemy.orm import selectinload
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+pytestmark = pytest.mark.unit  # explicit classification: no external deps
+
 from app.industrial.commands import IndustrialCommand
 from app.industrial.plc_adapter import PlcCommandResult, PlcNack, PlcUnreachable
 from app.enums import QualityResult

@@ -64,12 +64,16 @@ async def main() -> None:
     count_var = await plc.add_variable(idx, "ExecutedCount", 0)
     await count_var.set_writable(True)
 
-    async def execute(parent, command_json: str) -> str:
-        result = await asyncio.to_thread(core.execute, command_json)
+    async def execute(parent, command_json) -> list:
+        # asyncua 2.x passes input arguments as Variant values
+        payload = command_json.Value if isinstance(command_json, ua.Variant) else command_json
+        result = await asyncio.to_thread(core.execute, payload)
         await state_var.set_value(core.state)
-        await last_var.set_value(command_json)
+        await last_var.set_value(payload)
         await count_var.set_value(core.count)
-        return result
+        # asyncua 2.x: the callback return value becomes OutputArguments,
+        # which must be a LIST of Variants
+        return [ua.Variant(result, ua.VariantType.String)]
 
     # asyncua 2.x: node.add_method(nodeid, browsename, callback,
     # [input VariantTypes], [output VariantTypes])

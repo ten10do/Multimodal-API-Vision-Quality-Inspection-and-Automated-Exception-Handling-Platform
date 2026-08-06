@@ -89,6 +89,30 @@ def _plc_state() -> str:
     return httpx.get(f"{PLC_URL}/v1/state", timeout=3).json().get("state", "?")
 
 
+def _find_review_task(inspection_id: str) -> dict | None:
+    """Pagination-safe lookup of a PENDING review task by inspection id.
+
+    The PENDING queue grows across runs and can exceed the API's limit=500
+    page; a single page lookup would silently miss the task. Walk offsets
+    (500 per page) until the target is found or the queue is exhausted."""
+    for offset in range(0, 5000, 500):
+        tasks = httpx.get(
+            f"{BACKEND}/api/v1/reviews",
+            params={"status": "PENDING", "limit": 500, "offset": offset},
+            timeout=15,
+        ).json()
+        if not isinstance(tasks, list) or not tasks:
+            return None
+        hit = next(
+            (t for t in tasks if t.get("inspection_id") == inspection_id
+             or (t.get("inspection") or {}).get("inspection_id") == inspection_id),
+            None,
+        )
+        if hit is not None:
+            return hit
+    return None
+
+
 def main() -> int:
     checks = {}
 
@@ -167,12 +191,7 @@ def main() -> int:
     checks["review_hold"] = {"inspection_id": review_id, "state": d["industrial_final_state"]}
 
     # human resolve via the review queue (reuse Phase 5)
-    tasks = httpx.get(f"{BACKEND}/api/v1/reviews", params={"status": "PENDING", "limit": 500}, timeout=15).json()
-    # ReviewTaskOut.inspection_id is the FK UUID; match by the nested string id
-    task = next(
-        (t for t in tasks if t.get("inspection_id") == review_id or (t.get("inspection") or {}).get("inspection_id") == review_id),
-        None,
-    )
+    task = _find_review_task(review_id)
     assert task is not None, f"review task not created for REVIEW inspection {review_id}"
     tid = task["review_task_id"]
     httpx.post(f"{BACKEND}/api/v1/reviews/{tid}/claim", json={"reviewer": "e2e-qc"}, timeout=10)
@@ -196,11 +215,7 @@ def main() -> int:
             review2 = iid
             break
     assert review2 is not None
-    tasks = httpx.get(f"{BACKEND}/api/v1/reviews", params={"status": "PENDING", "limit": 500}, timeout=15).json()
-    task2 = next(
-        (t for t in tasks if t.get("inspection_id") == review2 or (t.get("inspection") or {}).get("inspection_id") == review2),
-        None,
-    )
+    task2 = _find_review_task(review2)
     assert task2 is not None
     tid2 = task2["review_task_id"]
     httpx.post(f"{BACKEND}/api/v1/reviews/{tid2}/claim", json={"reviewer": "e2e-qc"}, timeout=10)

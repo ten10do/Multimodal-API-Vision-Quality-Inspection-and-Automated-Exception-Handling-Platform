@@ -245,3 +245,46 @@ Reason Code).
 2. OPC UA adapter depends on asyncua 2.x API (verified against 2.0.1).
 3. MES retries are bounded (2) and synchronous in `process_result`; a slow
   MES adds latency to the inspection path (best-effort by design).
+
+## 14. OPC UA closing verification (post-commit gate)
+
+The initial OPC UA service test was **silently skipped**, not passed: the
+adapter hard-coded the browse path `"0:Plc"`, but the simulator registers
+the Plc object under its own (server-allocated) namespace index (currently
+2). The resulting `BadNoMatch` surfaced as `PlcUnreachable("opcua
+unreachable: ...")` and the test's exception handler matched `"unreachable"`
+and skipped -- masking a real bug.
+
+Fix (this commit):
+- `OpcUaPlcAdapter` now resolves the Plc object **without any namespace
+  index hard-coding**: declared namespace URI (`urn:ivqc:plc`) -> index read
+  from the server at connect time (`get_namespace_array`), with a
+  browse-by-name fallback for foreign servers.
+- `simulator/opcua_plc_server.py` adapted to asyncua 2.x callback contract
+  (input arrives as `Variant`, return value must be a list of Variants).
+- Gate policy: OPC UA tests are **fail-fast, never skip**; a missing
+  simulator now fails the gate instead of being reported as passed.
+  Optional-simulator tests keep `pytest.skip` in dev runs but raise when
+  `IVQC_REQUIRE_SIMULATORS=1` is set.
+
+Test classification markers: `unit` / `integration` / `opcua` /
+`industrial-e2e` (see pytest.ini). Gate run:
+`IVQC_REQUIRE_SIMULATORS=1 pytest ... -m "integration or opcua or
+industrial-e2e"`.
+
+Final gate results (all against the live simulators):
+- OPC UA adapter ACK + idempotency (real server, 8503): pass
+- OPC UA offline -> `PlcUnreachable`: pass
+- Service E2E via OPC UA: REVIEW->HOLD/HELD, PASS->RELEASE/RELEASED,
+  FAIL->REJECT/REJECTED, each with one persisted `PlcEvent`
+  (adapter_type=opcua, execution_status=ACK): 3/3 pass
+- OPC UA server unavailable -> `SAFE_HOLD`, never RELEASED: pass
+- Namespace robustness: Plc registered under namespace index != 2 still
+  resolves and ACKs: pass
+- Gate totals: `opcua` 7/7, industrial gate 18/18, skipped = 0.
+
+Default dev semantics: `IVQC_PLC_ENABLED=false`, `IVQC_MES_ENABLED=false`
+(config defaults + `.env.example`), verified end-to-end: REVIEW ->
+desired HOLD but `industrial_final_state=NOT_INTEGRATED`,
+`plc_adapter_type=none`, `reason_code=plc_integration_disabled`; no
+SAFE_HOLD/HELD/RELEASED/REJECTED and no fake ACK.

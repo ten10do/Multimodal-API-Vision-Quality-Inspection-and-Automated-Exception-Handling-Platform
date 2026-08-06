@@ -3,33 +3,33 @@
     "note": "no natural AI-PASS in NEU domain; real RELEASE covered by human-PASS scenario 3"
   },
   "fail_reject": {
-    "inspection_id": "insp-05ad3b551a50",
+    "inspection_id": "insp-3fba753802f9",
     "state": "REJECTED"
   },
   "review_hold": {
-    "inspection_id": "insp-6c854c567b68",
+    "inspection_id": "insp-8b008b5a1717",
     "state": "HELD"
   },
   "review_human_pass_release": {
-    "inspection_id": "insp-6c854c567b68",
+    "inspection_id": "insp-8b008b5a1717",
     "state": "RELEASED"
   },
   "review_human_fail_reject": {
-    "inspection_id": "insp-92dc11d0953d",
+    "inspection_id": "insp-6a7833a2d35b",
     "state": "REJECTED"
   },
   "plc_offline_safe_hold": {
-    "inspection_id": "insp-becc982c8b4b",
+    "inspection_id": "insp-2b5201258bab",
     "state": "SAFE_HOLD",
     "desired": "REJECT",
     "execution_status": "TIMEOUT"
   },
   "plc_nack_command_failed": {
-    "inspection_id": "insp-45d0c2a194d4",
+    "inspection_id": "insp-1a80785bcac2",
     "state": "COMMAND_FAILED"
   },
   "mes_500_failed": {
-    "inspection_id": "insp-effa755ca3d6",
+    "inspection_id": "insp-99f304201464",
     "mes_sync_status": "FAILED"
   }
 }

@@ -11,7 +11,9 @@ Run: pytest backend/tests/test_industrial_integration.py -m integration
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
+import time
 from pathlib import Path
 
 import httpx
@@ -19,6 +21,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.enums import QualityResult
 from app.industrial.commands import IndustrialCommand, command_id_for
 from app.industrial.mes_adapter import MesAdapter, MesRejected, MesUnreachable
 from app.industrial.plc_adapter import HttpPlcAdapter, OpcUaPlcAdapter, PlcNack, PlcUnreachable
@@ -40,7 +43,17 @@ def _cmd(command_type: str, inspection_id: str = "insp-it-1") -> IndustrialComma
 
 
 def _skipped(reason: str):
-    return pytest.skip(reason)
+    """Optional-simulator skip helper.
+
+    Default (dev) run: missing simulator -> skip, so the plain unit/dev
+    suite stays green. When the gate run declares the simulators present
+    (IVQC_REQUIRE_SIMULATORS=1), a missing simulator is a FAILURE, never a
+    silent skip -- a skipped industrial gate test must not be reported as
+    "passed".
+    """
+    if os.environ.get("IVQC_REQUIRE_SIMULATORS") == "1":
+        raise AssertionError(f"required simulator missing (IVQC_REQUIRE_SIMULATORS=1): {reason}")
+    pytest.skip(reason)
 
 
 # ---- HTTP PLC ----
@@ -128,23 +141,31 @@ async def test_http_plc_offline():
         await adapter.send_command(_cmd("REJECT", inspection_id="insp-offline"))
 
 
-# ---- OPC UA PLC ----
+# ---- OPC UA PLC (opcua gate: FAIL-FAST, never skip) ----
 
 @pytest.mark.integration
+@pytest.mark.opcua
 async def test_opcua_plc_ack_and_idempotency():
-    adapter = OpcUaPlcAdapter(PLC_OPCUA, timeout_seconds=3.0)
-    try:
-        first = await adapter.send_command(_cmd("HOLD", inspection_id="insp-opcua-1"))
-    except PlcUnreachable as exc:
-        _skipped(f"opcua simulator not running: {exc}")
+    """Adapter-level ACK + idempotency against the real local OPC UA server.
 
+    This is a Phase 7 gate test: if the simulator is missing the test FAILS
+    (no skip). Historically this test skipped on PlcUnreachable, which masked
+    the BadNoMatch namespace bug -- a skip must never be reported as pass.
+    """
+    adapter = OpcUaPlcAdapter(PLC_OPCUA, timeout_seconds=3.0)
+    # unique command_id per run: the simulator's idempotency set is persistent
+    # across runs (no admin reset on the OPC UA server), so a fixed id would
+    # come back as duplicate on the second run
+    iid = f"insp-opcua-{int(time.time() * 1000)}"
+    first = await adapter.send_command(_cmd("HOLD", inspection_id=iid))
     assert first.acked is True
     assert first.duplicate is False
-    second = await adapter.send_command(_cmd("HOLD", inspection_id="insp-opcua-1"))
+    second = await adapter.send_command(_cmd("HOLD", inspection_id=iid))
     assert second.duplicate is True
 
 
 @pytest.mark.integration
+@pytest.mark.opcua
 async def test_opcua_plc_offline():
     adapter = OpcUaPlcAdapter("opc.tcp://127.0.0.1:59998", timeout_seconds=1.0)
     with pytest.raises(PlcUnreachable):
@@ -220,6 +241,7 @@ async def test_mes_timeout_unreachable():
 # ---- end-to-end through the service (real HTTP PLC + MES) ----
 
 @pytest.mark.integration
+@pytest.mark.industrial_e2e
 async def test_service_full_chain_review_hold_then_release():
     """REVIEW -> HOLD (PLC state) -> human PASS -> RELEASE, all real simulators."""
     import pytest_asyncio
@@ -289,3 +311,213 @@ async def test_service_full_chain_review_hold_then_release():
         assert events[1].desired_command == "RELEASE"
 
     await engine.dispose()
+
+
+# ---- OPC UA full E2E: local OPC UA server -> OpcUaPlcAdapter ->
+#      IndustrialService -> plc_event persistence (Phase 7 closing gate) ----
+
+@pytest.mark.integration
+@pytest.mark.opcua
+@pytest.mark.parametrize(
+    "quality_result, expected_command, expected_state",
+    [
+        (QualityResult.REVIEW, "HOLD", "HELD"),
+        (QualityResult.PASS, "RELEASE", "RELEASED"),
+        (QualityResult.FAIL, "REJECT", "REJECTED"),
+    ],
+)
+async def test_opcua_service_ack_and_persistence(quality_result, expected_command, expected_state):
+    """Full OPC UA path through IndustrialService for each business outcome:
+    REVIEW -> HOLD/HELD, PASS -> RELEASE/RELEASED, FAIL -> REJECT/REJECTED.
+    Each run must record exactly one PlcEvent with execution_status=ACK,
+    industrial_state=<resolved terminal>, adapter_type=opcua.
+
+    Gate: the OPC UA and MES simulators are required; a missing one FAILS
+    (no skip, fail-fast when IVQC_REQUIRE_SIMULATORS=1, and even without it
+    the OPC UA path must never be silently skipped)."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.orm import selectinload
+
+    from app.enums import QualityResult
+    from app.industrial.plc_adapter import OpcUaPlcAdapter
+    from app.models import Base, Inspection, PlcEvent, Product
+    from app.services.industrial_service import IndustrialService
+
+    resp = httpx.get(f"{MES_HTTP}/v1/products/x", timeout=2)
+    resp.raise_for_status()  # fail-fast: MES is part of this gate
+    httpx.post(f"{MES_HTTP}/v1/admin/reset", timeout=2)
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    iid = f"insp-opcua-e2e-{expected_command.lower()}-{int(time.time() * 1000)}"
+    async with factory() as session:
+        product = Product(product_id=f"P-OPCUA-{expected_command}", production_line="line-a", station="qc")
+        session.add(product)
+        await session.flush()
+        inspection = Inspection(
+            inspection_id=iid, product_id=product.id, status="completed",
+            quality_result=quality_result,
+        )
+        session.add(inspection)
+        await session.commit()
+        insp = (
+            await session.execute(
+                select(Inspection).options(selectinload(Inspection.product)).where(Inspection.inspection_id == iid)
+            )
+        ).scalar_one()
+
+        svc = IndustrialService()
+        svc.plc_enabled = True
+        svc.plc_max_retries = 1
+        svc.plc = OpcUaPlcAdapter(PLC_OPCUA, timeout_seconds=3.0)
+        svc.mes = MesAdapter(MES_HTTP, timeout_seconds=2.0, max_retries=1)
+        svc.mes_enabled = True
+
+        await svc.process_result(session, insp, final_quality_result=quality_result.value, process_status="completed")
+        await session.commit()
+
+        assert insp.desired_command == expected_command
+        assert insp.execution_status == "ACK"
+        assert insp.industrial_final_state == expected_state
+        assert insp.plc_adapter_type == "opcua"
+
+        events = (await session.execute(select(PlcEvent))).scalars().all()
+        assert len(events) == 1
+        ev = events[0]
+        assert ev.adapter_type == "opcua"
+        assert ev.execution_status == "ACK"
+        assert ev.industrial_state == expected_state
+        assert ev.desired_command == expected_command
+        assert ev.acknowledged_at is not None
+
+    await engine.dispose()
+
+
+@pytest.mark.integration
+@pytest.mark.opcua
+async def test_opcua_unavailable_never_release():
+    """OPC UA server unreachable -> adapter failure -> SAFE_HOLD.
+
+    Fail-safe contract: even a PASS result must never produce RELEASED when
+    the field layer cannot be reached; the product lands in SAFE_HOLD and the
+    persisted PlcEvent records the real (un-acked) state."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.orm import selectinload
+
+    from app.enums import QualityResult
+    from app.industrial.plc_adapter import OpcUaPlcAdapter
+    from app.models import Base, Inspection, PlcEvent, Product
+    from app.services.industrial_service import IndustrialService
+
+    httpx.get(f"{MES_HTTP}/v1/products/x", timeout=2).raise_for_status()
+    httpx.post(f"{MES_HTTP}/v1/admin/reset", timeout=2)
+
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async with factory() as session:
+        product = Product(product_id="P-OPCUA-OFF", production_line="line-a", station="qc")
+        session.add(product)
+        await session.flush()
+        inspection = Inspection(
+            inspection_id="insp-opcua-unavail", product_id=product.id, status="completed",
+            quality_result=QualityResult.PASS,
+        )
+        session.add(inspection)
+        await session.commit()
+        insp = (
+            await session.execute(
+                select(Inspection).options(selectinload(Inspection.product)).where(Inspection.inspection_id == "insp-opcua-unavail")
+            )
+        ).scalar_one()
+
+        svc = IndustrialService()
+        svc.plc_enabled = True
+        svc.plc_max_retries = 1
+        svc.plc = OpcUaPlcAdapter("opc.tcp://127.0.0.1:59997", timeout_seconds=1.0)
+        svc.mes = MesAdapter(MES_HTTP, timeout_seconds=2.0, max_retries=1)
+        svc.mes_enabled = True
+
+        await svc.process_result(session, insp, final_quality_result="PASS", process_status="completed")
+        await session.commit()
+
+        assert insp.desired_command == "RELEASE"  # what was wanted...
+        assert insp.execution_status in ("ERROR", "TIMEOUT")  # ...but never ACKed
+        assert insp.industrial_final_state == "SAFE_HOLD"  # ...and never RELEASED
+        assert insp.industrial_final_state != "RELEASED"
+
+        events = (await session.execute(select(PlcEvent))).scalars().all()
+        assert len(events) == 1
+        ev = events[0]
+        assert ev.adapter_type == "opcua"
+        assert ev.industrial_state == "SAFE_HOLD"
+        assert ev.desired_command == "RELEASE"
+        assert ev.execution_status in ("ERROR", "TIMEOUT")
+        assert ev.acknowledged_at is None
+
+    await engine.dispose()
+
+
+@pytest.mark.integration
+@pytest.mark.opcua
+async def test_opcua_adapter_resolves_any_namespace_index():
+    """Namespace robustness: the Plc object is registered under a namespace
+    whose INDEX IS NOT 2 (two filler namespaces are registered first). The
+    adapter must still resolve it (URI -> index, browse fallback) and ACK --
+    proving a namespace-index change can never break the adapter again."""
+    import json as _json
+    import socket
+
+    from asyncua import Server, ua
+
+    from app.industrial.plc_adapter import OpcUaPlcAdapter
+
+    sock = socket.socket()
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+
+    server = Server()
+    await server.init()
+    server.set_endpoint(f"opc.tcp://127.0.0.1:{port}")
+    # two filler namespaces force the Plc namespace index away from 2
+    await server.register_namespace("urn:ivqc:filler-a")
+    await server.register_namespace("urn:ivqc:filler-b")
+    idx = await server.register_namespace("urn:ivqc:plc")
+    assert idx != 2, "test setup broken: expected Plc namespace index != 2"
+    plc_obj = await server.nodes.objects.add_object(idx, "Plc")
+    executed: set[str] = set()
+
+    async def execute(parent, command_json) -> list:
+        payload = command_json.Value if isinstance(command_json, ua.Variant) else command_json
+        cid = _json.loads(payload).get("command_id", "")
+        if cid in executed:
+            return [ua.Variant("ACK:duplicate", ua.VariantType.String)]
+        executed.add(cid)
+        return [ua.Variant("ACK:1", ua.VariantType.String)]
+
+    await plc_obj.add_method(idx, "execute", execute, [ua.VariantType.String], [ua.VariantType.String])
+
+    async def _run_server() -> None:
+        async with server:
+            await asyncio.Future()  # keep serving until cancelled
+
+    task = asyncio.create_task(_run_server())
+    try:
+        await asyncio.sleep(0.5)  # let the listener come up
+        adapter = OpcUaPlcAdapter(f"opc.tcp://127.0.0.1:{port}", timeout_seconds=5.0)
+        first = await adapter.send_command(_cmd("HOLD", inspection_id="insp-ns-robust"))
+        assert first.acked is True
+        assert first.duplicate is False
+        second = await adapter.send_command(_cmd("HOLD", inspection_id="insp-ns-robust"))
+        assert second.duplicate is True
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
