@@ -1,0 +1,92 @@
+{
+  "dataset": "Severstal Steel Defect Detection (train subset)",
+  "domain_note": "steel hot-rolled flat sheet, Severstal production-line camera distribution only",
+  "model": "steel-patchcore",
+  "model_version": "1.0.0",
+  "bank": "D:\\Multimodal API Vision Quality Inspection and Automated Exception Handling Platform\\inference-service\\models\\steel-patchcore\\bank.npz",
+  "n_train_normal": 4721,
+  "n_validation_normal": 590,
+  "n_test_normal": 591,
+  "n_test_anomaly": 6666,
+  "threshold": 0.490039,
+  "formal_test": {
+    "test_normal": 591,
+    "test_anomaly": 6666,
+    "total": 7257
+  },
+  "validation_diagnostic": {
+    "n": 590,
+    "tn": 590,
+    "fp": 0,
+    "fpr": 0.0
+  },
+  "image_auroc": 0.4817,
+  "pixel_auroc_mean_per_image": 0.8319,
+  "aup_pro_mean_per_image": 0.5838,
+  "operating_point": {
+    "tp": 0,
+    "fp": 1,
+    "tn": 590,
+    "fn": 6666,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "normal_fpr": 0.0017,
+    "anomaly_recall": 0.0,
+    "confusion_matrix": [
+      [
+        590,
+        1
+      ],
+      [
+        6666,
+        0
+      ]
+    ]
+  },
+  "score_distributions": {
+    "train_normal": {
+      "n": 4721,
+      "min": 0.2456,
+      "p50": 0.364893,
+      "p95": 0.433795,
+      "p99": 0.453317,
+      "max": 0.490039
+    },
+    "validation_normal": {
+      "n": 590,
+      "min": 0.239378,
+      "p50": 0.365912,
+      "p95": 0.430511,
+      "p99": 0.451142,
+      "max": 0.462758
+    },
+    "test_normal": {
+      "n": 591,
+      "min": 0.251204,
+      "p50": 0.368732,
+      "p95": 0.433098,
+      "p99": 0.45471,
+      "max": 0.490773
+    },
+    "test_anomaly": {
+      "n": 6666,
+      "min": 0.255288,
+      "p50": 0.358937,
+      "p95": 0.421859,
+      "p99": 0.440876,
+      "max": 0.47731
+    },
+    "threshold": 0.490039
+  },
+  "aggregation": {
+    "image_score": "max over 7 tile scores",
+    "pixel_overlap": "mean",
+    "formal_split_allowlist": [
+      "test_normal",
+      "test_anomaly"
+    ],
+    "auroc_pooled_or_per_image": "image AUROC pooled over images; pixel AUROC and AUPRO are per-image means (documented difference from Phase 6 pooled approx)"
+  },
+  "device": "cuda:0"
+}

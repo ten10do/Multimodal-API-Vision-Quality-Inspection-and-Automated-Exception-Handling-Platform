@@ -12,6 +12,7 @@ __pycache__/
 coverage.xml
 htmlcov/
 .venv/
+.venv-steel/
 *.egg-info/
 node_modules/
 .next/
