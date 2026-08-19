@@ -35,7 +35,7 @@
       "Q3": 0.358869,
       "Q4": 0.394201
     },
-    "coverage_conclusion": "uniform (validation ~= train); bank coverage is not the dominant failure"
+    "coverage_conclusion": "normal-manifold coverage shows no obvious systematic deficit; bank sampling is deprioritized relative to spatial/context representation (not proven irrelevant)"
   },
   "feature_layer_results": {
     "gate": {"auroc_min": 0.60, "delta_vs_r0": 0.10},
@@ -56,7 +56,7 @@
     "n2_delta_vs_n0": 0.0071,
     "n2_gate_passed": false
   },
-  "root_cause_update": "Pretrained WRN-50-2 layer2/layer3 patch features + cosine 1-NN cannot separate steel defects from normal at image level. Layer choice and normalization shift ranking only marginally (best 0.539), far below 0.60. Layer2 fine detail injects anti-signal relative to layer3. Defects are largely sub-resolution for this feature space.",
+  "root_cause_update": "Under the current patch representation (WRN-50-2 layer2/layer3 + cosine 1-NN), image-level AUROC stays near chance (best 0.539) across aggregation, layer selection, and normalization. Smaller defects show substantially weaker separability than larger defects. Layer2 fine detail injects anti-signal relative to layer3. Whether small-defect weakness is a spatial/context or scale limitation is left to the spatial phase; no sub-resolution claim is made here.",
   "holdout_access_count": 0,
   "tests": {"passed": 66, "failed": 0, "skipped": 1, "deselected": 0}
 }

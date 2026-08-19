@@ -57,9 +57,10 @@ Raw nearest-bank distance distributions over the 8644 frozen originals:
 - train vs validation per-tile median raw max track each other closely
   (tile 3 highest ~0.31, tile 0 lowest ~0.27).
 
-Conclusion: bank coverage over the normal manifold is **uniform**; a 0.148%
-reservoir does not create a systematic normal-region coverage gap, so coverage
-is not the dominant failure. The bottleneck is the raw representation ranking.
+Conclusion: normal-manifold coverage shows no obvious systematic deficit (the
+0.148% reservoir yields uniform train↔validation patch-distance support), so
+bank sampling is deprioritized relative to spatial/context representation. This
+is a deprioritization, not a proof that bank sampling is irrelevant.
 
 ## 6. Frozen Representation Protocol
 
@@ -116,20 +117,25 @@ candidate.
 
 1. **Feature-layer configuration does affect ranking** (layer3 0.539 > concat
    0.493 > layer2 0.424), so the layer choice is a real lever — but a weak one,
-   toppin out at 0.539, far below 0.60.
+   topping out at 0.539, far below 0.60.
 2. **Layer2 fine-grained detail injects anti-signal**: concatenating layer2 into
    layer3 *lowers* AUROC from 0.539 to 0.493. This supports the imbalance /
    dilution hypothesis (#3 in §3) rather than refuting representation failure.
 3. **Normalization does not help**: balancing layer mass (N2) moves AUROC only
    to 0.4997.
-4. **Bank coverage is not the bottleneck** (§5).
+4. **Bank coverage shows no obvious systematic deficit** — bank sampling is
+   deprioritized relative to spatial/context representation (§5), not proven
+   irrelevant.
 
-Conclusion: the raw patch-distance representation (pretrained WRN-50-2
-layer2/layer3 + cosine 1-NN) is fundamentally unable to separate steel surface
-defects from normal texture at image level; defects are largely sub-resolution
-for this feature space. Aggregation, feature-layer selection, normalization,
-and bank coverage have each been ruled out or shown marginal, so this is a
-representation/domain-mismatch failure, not an implementation bug.
+Conclusion: under the current patch representation (pretrained WRN-50-2
+layer2/layer3 + cosine 1-NN), the image-level AUROC stays near chance across
+aggregation, feature-layer selection, and normalization. Smaller defects show
+substantially weaker separability than larger defects under this patch
+representation. Aggregation, feature-layer selection, and normalization have
+each shown marginal effect; the observed weak separability is consistent with a
+representation/domain-mismatch, but this phase does not assert that small
+defects are "sub-resolution" — that requires the spatial/context experiments
+in the next phase.
 
 ## 12. Gate Verdict
 
