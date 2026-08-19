@@ -1,0 +1,75 @@
+{
+  "schema_version": "steel_patchcore_recovery_evidence_summary_v1",
+  "verdict": "RECOVERY_EVIDENCE_READY",
+  "capture_completed_at": "2026-08-19T08:36:33.189184Z",
+  "branch": "feat/steel-patchcore-validity-recovery-v1.2",
+  "extractor_commit": "22333883150d19b80b91c5a1d2c1a5961012aca2",
+  "frozen_lineage": {
+    "bank_sha256": "291bb2903b6e9a3bc60ca4ae35380bd7cf312bc661366d10f87a75d3f0b8ebda",
+    "baseline_threshold": 0.490039,
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448"
+  },
+  "capture": {
+    "train_normal": 4721,
+    "validation_normal": 590,
+    "recovery_dev_anomaly": 3333,
+    "total_originals": 8644,
+    "artifact_shards": 88,
+    "artifact_total_size_bytes": 248671536,
+    "evidence_manifest_sha256": "7067bbc6da747ffa90db9532729f579e19ee90fbcdf3867c96f2dd56a0d10303"
+  },
+  "integrity": {
+    "unique_originals": 8644,
+    "duplicate_originals": 0,
+    "missing_originals": 0,
+    "unexpected_originals": 0,
+    "shard_sha256_mismatches": 0,
+    "shard_size_mismatches": 0,
+    "metadata_or_geometry_failures": 0,
+    "nonfinite_failures": 0
+  },
+  "raw_evidence": {
+    "canonical_dtype": "float32",
+    "tile_grids_per_original": 7,
+    "tile_grid_shape": [32, 32],
+    "tile_offsets": [0, 256, 512, 768, 1024, 1280, 1344],
+    "patch_stride": 8,
+    "stitched_grid_shape": [32, 200],
+    "stitched_overlap_rule": "mean"
+  },
+  "baseline_reconstruction": {
+    "absolute_tolerance": 0.000002,
+    "frozen_reference_max_abs_error": 4.999465942345793e-7,
+    "frozen_reference_p99_abs_error": 4.900609588665005e-7,
+    "frozen_reference_mean_abs_error": 1.3527170566962582e-7,
+    "frozen_reference_mismatch_count": 0,
+    "stored_float32_max_abs_error": 0.0,
+    "stored_float32_p99_abs_error": 0.0,
+    "stored_float32_mean_abs_error": 0.0,
+    "stored_float32_mismatch_count": 0
+  },
+  "normalization_semantics_gate": "PASS",
+  "candidate_grid": {
+    "frozen_candidates": ["A0", "A1", "A2", "A3", "A4", "A5", "A6"],
+    "development_evaluation": "NOT_RUN",
+    "ranking": "NOT_RUN",
+    "threshold_selection": "NOT_RUN"
+  },
+  "holdout_isolation": {
+    "test_normal_access_count": 0,
+    "recovery_holdout_anomaly_access_count": 0,
+    "total_holdout_inference_count": 0
+  },
+  "tests": {
+    "passed": 29,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "MLOps registration not run yet"
+  },
+  "limitations": [
+    "The recovery holdout is post-hoc and is not a pristine independent test.",
+    "The steel-patchcore 1.0.0 conclusion remains STEEL_DOMAIN_VALIDATION_FAILED.",
+    "No A0-A6 development evaluation, ranking, threshold selection, holdout evaluation, representation change, or Optimization 2 work was run."
+  ]
+}
