@@ -1,0 +1,62 @@
+{
+  "schema_version": "steel_patchcore_representation_results_v1",
+  "verdict": "REPRESENTATION_BASE_FEATURE_GATE_FAILED",
+  "phase": "Optimization 1.1 representation investigation (not Optimization 2)",
+  "protocol_version": "representation_protocol_v1",
+  "branch": "feat/steel-patchcore-validity-recovery-v1.2",
+  "lineage": {
+    "bank_sha256": "291bb2903b6e9a3bc60ca4ae35380bd7cf312bc661366d10f87a75d3f0b8ebda",
+    "baseline_threshold": 0.490039,
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "evidence_manifest_sha256": "7067bbc6da747ffa90db9532729f579e19ee90fbcdf3867c96f2dd56a0d10303",
+    "diagnostic_subset_manifest_sha256": "8d39aec04c35ac7a7edc931c6dfb3494c6ada6a0a6e13e77b89bc894f9919075"
+  },
+  "diagnostic_subset": {
+    "seed": 42,
+    "train_normal": 1000,
+    "validation_normal": 300,
+    "recovery_dev_anomaly": 1000,
+    "anomaly_per_quartile": 250,
+    "anomaly_quartile_boundaries": {
+      "q1": 0.010888671875,
+      "q2": 0.02656494140625,
+      "q3": 0.07214111328125
+    }
+  },
+  "offline_diagnostics": {
+    "validation_minus_train_median_patch_mean_distance": 0.0013442898052744567,
+    "area_ratio_vs_a0_spearman_rho": 0.3760814971416684,
+    "max_component_vs_a0_spearman_rho": 0.3874366959325038,
+    "anomaly_minus_validation_normal_a0_median": -0.006292909383773804,
+    "quartile_a0_median": {
+      "Q1": 0.345825,
+      "Q2": 0.350853,
+      "Q3": 0.358869,
+      "Q4": 0.394201
+    },
+    "coverage_conclusion": "uniform (validation ~= train); bank coverage is not the dominant failure"
+  },
+  "feature_layer_results": {
+    "gate": {"auroc_min": 0.60, "delta_vs_r0": 0.10},
+    "verdict": "FEATURE_LAYER_GATE_FAILED",
+    "r0_frozen_bank_reference_auroc": 0.49356,
+    "candidates": {
+      "R0": {"layers": ["layer2", "layer3"], "image_auroc": 0.4927, "anomaly_minus_normal_median": -0.0043, "q4_normal_vs_quartile_auroc": 0.6785},
+      "R1": {"layers": ["layer2"], "image_auroc": 0.4236, "anomaly_minus_normal_median": -0.0170, "q4_normal_vs_quartile_auroc": 0.5801, "gate_passed": false},
+      "R2": {"layers": ["layer3"], "image_auroc": 0.5388, "anomaly_minus_normal_median": 0.0062, "q4_normal_vs_quartile_auroc": 0.7404, "gate_passed": false}
+    }
+  },
+  "normalization_results": {
+    "gate": {"auroc_min": 0.60, "delta_vs_n0": 0.10},
+    "verdict": "NORMALIZATION_GATE_FAILED",
+    "n0_auroc": 0.4927,
+    "n1_note": "N1 (per-patch L2 + cosine) is code-equivalent to current semantics == N0; no separate run",
+    "n2_auroc": 0.4997,
+    "n2_delta_vs_n0": 0.0071,
+    "n2_gate_passed": false
+  },
+  "root_cause_update": "Pretrained WRN-50-2 layer2/layer3 patch features + cosine 1-NN cannot separate steel defects from normal at image level. Layer choice and normalization shift ranking only marginally (best 0.539), far below 0.60. Layer2 fine detail injects anti-signal relative to layer3. Defects are largely sub-resolution for this feature space.",
+  "holdout_access_count": 0,
+  "tests": {"passed": 66, "failed": 0, "skipped": 1, "deselected": 0}
+}
