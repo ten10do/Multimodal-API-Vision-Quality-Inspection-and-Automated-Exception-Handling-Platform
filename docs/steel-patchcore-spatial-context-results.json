@@ -1,0 +1,45 @@
+{
+  "schema_version": "steel_patchcore_spatial_context_results_v1",
+  "verdict": "SPATIAL_REPRESENTATION_GATE_FAILED",
+  "phase": "Optimization 1.1 spatial scale & local context investigation (not Optimization 2)",
+  "protocol_version": "spatial_context_protocol_v1",
+  "branch": "feat/steel-patchcore-validity-recovery-v1.2",
+  "lineage": {
+    "bank_sha256": "291bb2903b6e9a3bc60ca4ae35380bd7cf312bc661366d10f87a75d3f0b8ebda",
+    "baseline_threshold": 0.490039,
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "evidence_manifest_sha256": "7067bbc6da747ffa90db9532729f579e19ee90fbcdf3867c96f2dd56a0d10303",
+    "diagnostic_subset_manifest_sha256": "8d39aec04c35ac7a7edc931c6dfb3494c6ada6a0a6e13e77b89bc894f9919075"
+  },
+  "scale_geometry": {
+    "layer2": {"shape": [32, 32], "stride_px": 8.0, "cell_px": 8.0},
+    "layer3_native": {"shape": [16, 16], "stride_px": 16.0, "cell_px": 16.0},
+    "layer3_as_used": {"shape": [32, 32], "stride_px": 8.0, "note": "bilinear upsample; 16px info source"}
+  },
+  "defect_to_grid": {
+    "n": 3333,
+    "median_largest_component_bbox_w_px": {"Q1": 29.0, "Q2": 35.0, "Q3": 55.0, "Q4": 314.0},
+    "median_largest_component_bbox_h_px": {"Q1": 100.0, "Q2": 216.0, "Q3": 254.0, "Q4": 239.0},
+    "median_largest_component_bbox_side_px": {"Q1": 102.0, "Q2": 218.0, "Q3": 255.0, "Q4": 314.0},
+    "fraction_bbox_within_1cell_8px": 0.00030003000300030005,
+    "fraction_bbox_within_2x2cells_16px": 0.0,
+    "fraction_bbox_within_4x4cells_32px": 0.006,
+    "interpretation": "Q1 defects are thin (high aspect ratio), not sub-cell"
+  },
+  "spatial_context_gate": {"auroc_min": 0.65, "delta_vs_s0": 0.10, "verdict": "SPATIAL_CONTEXT_GATE_FAILED"},
+  "stage_s": {
+    "S0": {"layer": "layer3", "context": null, "image_auroc": 0.5388, "q1": 0.4183, "q2": 0.4662, "q3": 0.5304, "q4": 0.7404},
+    "S1": {"layer": "layer3", "context": 3, "image_auroc": 0.5620, "delta_vs_s0": 0.0232, "q1": 0.4341, "q2": 0.4948, "q3": 0.5608, "q4": 0.7585, "anomaly_minus_normal_median": 0.0111, "gate_passed": false},
+    "S2": {"layer": "layer3", "context": 5, "image_auroc": 0.6029, "delta_vs_s0": 0.0641, "q1": 0.4790, "q2": 0.5305, "q3": 0.6145, "q4": 0.7876, "anomaly_minus_normal_median": 0.0159, "gate_passed": false}
+  },
+  "patch_scale_gate": {"auroc_min": 0.60, "delta_vs_r1": 0.10, "q1_delta_vs_r1": 0.10, "verdict": "PATCH_SCALE_GATE_FAILED"},
+  "stage_p": {
+    "R1_reference": {"image_auroc": 0.4236, "q1": 0.3487},
+    "P0": {"layer": "layer3", "context": null, "image_auroc": 0.5388, "delta_vs_r1": 0.1152, "q1": 0.4183, "q1_delta_vs_r1": 0.0696},
+    "P1": {"layer": "layer2", "context": 3, "image_auroc": 0.4882, "delta_vs_r1": 0.0646, "q1": 0.3651, "q1_delta_vs_r1": 0.0164, "gate_passed": false}
+  },
+  "root_cause_update": "Local context (3x3/5x5 avg on layer3) improves separation monotonically (S2 0.6029) and lifts all quartiles, supporting H1 in direction but below gate. Higher grid + context (P1, layer2+3x3) raises raw layer2 0.4236->0.4882 but Q1 only +0.016, so H2 is not resolved by grid/context. Within the ImageNet WRN-50-2 family, layer selection + normalization + aggregation + local context + higher grid still do not recover image-level validity.",
+  "holdout_access_count": 0,
+  "tests": {"passed": 78, "failed": 0, "skipped": 1, "deselected": 0}
+}
