@@ -1,0 +1,86 @@
+{
+  "schema_version": "steel_patchcore_canonical_reference_results_v1",
+  "protocol_version": "canonical_patchcore_protocol_v1",
+  "verdict": "CANONICAL_PATCHCORE_REFERENCE_BLOCKED",
+  "generated_at": "2026-08-20T02:19:26Z",
+  "branch": "feat/steel-patchcore-validity-recovery-v1.2",
+  "head_sha": "73d9fdf2a81c45b0d32fd60709d3b1925d5b4135",
+  "reference": {
+    "name": "anomalib",
+    "version": "0.7.0",
+    "model": "anomalib.models.patchcore.torch_model.PatchcoreModel",
+    "backbone": "wide_resnet50_2",
+    "timm": "0.6.12",
+    "pretrained": true,
+    "pretrained_weight": "wide_resnet50_racm-8234f177.pth (ImageNet-1k)",
+    "layers": ["layer2", "layer3"],
+    "input_size": [256, 256],
+    "coreset": {
+      "method": "KCenterGreedy + SparseRandomProjection(eps=0.9)",
+      "sampling_ratio": 0.1,
+      "srp_n_components_for_7_168_000_patches": 389,
+      "deterministic": false
+    },
+    "num_neighbors": 9,
+    "distance": "euclidean (raw 1536-d, no L2 normalization)",
+    "alignment": "AvgPool2d(3,1,1,count_include_pad=True) both layers; layer3->layer2 via F.interpolate(mode='nearest')",
+    "score": "k=1 nearest-neighbour patch distance, reweighted by 9-support isolation (1 - softmax(distances))[0]",
+    "normalization": "input must be ImageNet-normalized ([0.485,0.456,0.406] / [0.229,0.224,0.225])"
+  },
+  "environment": {
+    "python": "3.11.9",
+    "torch": "2.11.0+cu128",
+    "torchvision": "0.26.0+cu128",
+    "anomalib": "0.7.0",
+    "timm": "0.6.12",
+    "albumentations": "1.3.1",
+    "gpu": "NVIDIA GeForce RTX 5060 (8 GB)",
+    "total_ram_bytes": 34193739776
+  },
+  "c0": {
+    "candidate": "S2 (layer3 + 5x5 avg context)",
+    "auroc": 0.6029,
+    "quartiles": {"Q1": 0.4790, "Q2": 0.5305, "Q3": 0.6145, "Q4": 0.7876},
+    "source": "frozen spatial-context results, not re-run"
+  },
+  "c1": {
+    "auroc": null,
+    "quartiles": null,
+    "threshold": null,
+    "reason_not_produced": "memory infeasible at frozen protocol scale"
+  },
+  "memory_preflight": {
+    "n_train_images": 1000,
+    "n_tiles_per_image": 7,
+    "patches_per_tile": 1024,
+    "total_patches": 7168000,
+    "embedding_dim": 1536,
+    "srp_n_components": 389,
+    "embedding_matrix_bytes": 44040192000,
+    "projected_matrix_bytes": 11153408000,
+    "peak_coreset_selection_bytes": 55193600000,
+    "coreset_bank_patches": 716800,
+    "coreset_bank_bytes": 4404019200,
+    "total_ram_bytes": 34193739776,
+    "feasible": false
+  },
+  "smoke_evidence": {
+    "ran": true,
+    "status": "CANONICAL_PATCHCORE_SMOKE_OK",
+    "embedding_shape_one_tile": [1024, 1536],
+    "two_tile_embedding_shape": [2048, 1536],
+    "coreset_bank_shape": [204, 1536],
+    "sample_score_value": 30.05333709716797,
+    "anomaly_map_shape": [1, 1, 256, 256],
+    "gpu": "NVIDIA GeForce RTX 5060"
+  },
+  "blocker_reason": "canonical PatchCore (0.1 greedy coreset over 1000 train_normal x 7 tiles) needs a 44.0 GB raw embedding matrix (7,168,000 patches x 1536-d float32) plus an 11.2 GB SparseRandomProjection matrix (peak ~55.2 GB) against 34.2 GB total RAM; the ~716,800-patch bank also exceeds the 8 GB GPU for euclidean k-NN + reweighting. Running would require a hand-rolled streaming coreset or shrinking the frozen train/tile/coreset protocol, both excluded by this phase's rules.",
+  "holdout_access_count": 0,
+  "environment_repairs": [
+    "pip install anomalib==0.7.0 albumentations<1.4 (avoided stringzilla no-wheel)",
+    "pip install requests ftfy regex gdown (ai_vad->CLIP transitive imports)",
+    "pip install psutil (lifecycle lock in adapter)",
+    "stub-bypass of anomalib.models/.data/.pre_processing package __init__ (unrelated models/data pull albumentations->imgaug on NumPy 2 + CLIP)",
+    "timm/models/maxxvit.py: field(default_factory=...) for 2 mutable dataclass defaults (timm 0.6.12 vs Python 3.11; unrelated maxxvit family)"
+  ]
+}
