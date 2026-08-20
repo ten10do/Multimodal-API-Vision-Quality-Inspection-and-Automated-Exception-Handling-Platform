@@ -136,6 +136,7 @@ def whitening_sanity(whitened_sample: np.ndarray) -> dict:
     x = np.asarray(whitened_sample, dtype=np.float64)
     if x.ndim != 2 or x.shape[0] == 0:
         raise ValueError("whitened_sample must be (n, d) with n > 0")
+    n_finite = int(np.isfinite(x).all(axis=1).sum())
     col_mean = x.mean(axis=0)
     centered = x - col_mean
     cov = (centered.T @ centered) / x.shape[0]
@@ -144,13 +145,16 @@ def whitening_sanity(whitened_sample: np.ndarray) -> dict:
     off_flat = off[np.triu_indices_from(off, k=1)]
     return {
         "sample_size": int(x.shape[0]),
+        "non_finite_count": int(x.shape[0] - n_finite),
         "max_abs_mean": float(np.max(np.abs(col_mean))),
         "mean_abs_mean": float(np.mean(np.abs(col_mean))),
         "cov_diag_min": float(diag.min()),
         "cov_diag_p50": float(np.median(diag)),
+        "cov_diag_p95": float(np.percentile(diag, 95.0)),
         "cov_diag_max": float(diag.max()),
         "cov_offdiag_abs_mean": float(np.mean(off_flat)) if off_flat.size else 0.0,
         "cov_offdiag_abs_p95": float(np.percentile(off_flat, 95.0)) if off_flat.size else 0.0,
+        "cov_offdiag_abs_p99": float(np.percentile(off_flat, 99.0)) if off_flat.size else 0.0,
         "cov_offdiag_abs_max": float(np.max(off_flat)) if off_flat.size else 0.0,
     }
 
