@@ -1,0 +1,134 @@
+{
+  "schema_version": "steel_patchcore_domain_representation_results_v1",
+  "protocol_version": "domain_representation_protocol_v1",
+  "verdict": "DOMAIN_REPRESENTATION_GATE_FAILED",
+  "gate": {
+    "auroc_min": 0.70,
+    "delta_vs_d0": 0.10,
+    "strong_auroc": 0.80,
+    "quartile_delta": 0.10
+  },
+  "strong_signal": false,
+  "small_defect_signal": true,
+  "d0": {
+    "candidate": "S2",
+    "image_auroc": 0.6029,
+    "quartiles": {
+      "Q1": 0.4790,
+      "Q2": 0.5305,
+      "Q3": 0.6145,
+      "Q4": 0.7876
+    },
+    "source": "frozen spatial-context results (WRN-50-2 layer3 + 5x5 avg context), not re-run"
+  },
+  "d1": {
+    "reference": {
+      "name": "DINOv2",
+      "model_identifier": "dinov2_vits14",
+      "arch": "vit_small",
+      "implementation": "facebookresearch/dinov2 (official torch.hub)",
+      "license": "Apache-2.0",
+      "embed_dim": 384,
+      "depth": 12,
+      "num_heads": 6,
+      "mlp_ratio": 4,
+      "patch_size": 14,
+      "img_size": 518,
+      "num_register_tokens": 0,
+      "num_cls_tokens": 1,
+      "pretraining": "self-supervised DINOv2 on LVD-142M",
+      "weights_url": "https://dl.fbaipublicfiles.com/dinov2/vit_small14/vit_small14_pretrain.pth",
+      "weights_sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+      "extraction": "model.forward_features(x)['x_norm_patchtokens'] (final LayerNorm patch tokens; CLS and any register tokens already excluded)",
+      "input_normalization": "ImageNet mean/std (0.485,0.456,0.406)/(0.229,0.224,0.225) on [0,1]",
+      "input_resize": "256x256 tile bilinearly resized to 252x252 (PatchEmbed requires H,W multiples of patch_size=14; 252=18*14 preserves all tile content)",
+      "reference_sha256": "24db4cf06f033a20bf8a791fe876e75f2fc2d99d1936a35fe726c13877735504"
+    },
+    "runtime_identity": {
+      "module": "dinov2.models.vision_transformer.DinoVisionTransformer",
+      "embed_dim": 384,
+      "patch_size": 14,
+      "img_size": [518, 518],
+      "depth": 12,
+      "num_register_tokens": 0,
+      "num_cls_tokens": 1,
+      "gpu": "NVIDIA GeForce RTX 5060",
+      "environment": {
+        "python": "3.11.9",
+        "torch": "2.11.0+cu128"
+      },
+      "feedforward_output_keys": [
+        "x_norm_clstoken",
+        "x_norm_regtokens",
+        "x_norm_patchtokens",
+        "x_prenorm",
+        "masks"
+      ]
+    },
+    "bank_sha256": "9cc52bf41f0fa2b4718d178f12fee36bc534f3b0b8258a09171dab1fa118d237",
+    "bank_manifest": {
+      "candidate_id": "D1",
+      "representation": "DINOv2 ViT-S/14 spatial patch tokens (raw, per-patch L2)",
+      "model_identifier": "dinov2_vits14",
+      "dim": 384,
+      "rows": 50000,
+      "dtype": "float32",
+      "sampling": "reservoir Algorithm R",
+      "seed": 42,
+      "budget": 50000,
+      "candidate_patches": 2268000,
+      "source": "train_normal_subset",
+      "source_count": 1000,
+      "bank_sha256": "9cc52bf41f0fa2b4718d178f12fee36bc534f3b0b8258a09171dab1fa118d237",
+      "subset_manifest_sha256": "8d39aec04c35ac7a7edc931c6dfb3494c6ada6a0a6e13e77b89bc894f9919075",
+      "reference_sha256": "24db4cf06f033a20bf8a791fe876e75f2fc2d99d1936a35fe726c13877735504",
+      "created_at": "2026-08-20T03:37:33.466642Z"
+    },
+    "metrics": {
+      "threshold": 0.6451101303100586,
+      "image_auroc": 0.6699,
+      "normal_distribution": {
+        "n": 300,
+        "min": 0.22490203380584717,
+        "p50": 0.33424633741378784,
+        "p95": 0.49696008563041694,
+        "p99": 0.567918421626091,
+        "max": 0.6217772960662842
+      },
+      "anomaly_distribution": {
+        "n": 1000,
+        "min": 0.24141883850097656,
+        "p50": 0.37646931409835815,
+        "p95": 0.5504866987466812,
+        "p99": 0.6159700334072113,
+        "max": 0.6538091897964478
+      },
+      "anomaly_minus_normal_median": 0.04222297668457031,
+      "operating_point": {
+        "tp": 2,
+        "fp": 0,
+        "tn": 300,
+        "fn": 998,
+        "precision": 1.0,
+        "recall": 0.002,
+        "f1": 0.003992015968063872,
+        "normal_fpr": 0.0,
+        "anomaly_recall": 0.002,
+        "confusion_matrix": [[300, 0], [998, 2]]
+      },
+      "quartiles": [
+        { "quartile": 1, "count": 250, "normal_vs_quartile_auroc": 0.5843 },
+        { "quartile": 2, "count": 250, "normal_vs_quartile_auroc": 0.6086 },
+        { "quartile": 3, "count": 250, "normal_vs_quartile_auroc": 0.6607 },
+        { "quartile": 4, "count": 250, "normal_vs_quartile_auroc": 0.8261 }
+      ]
+    },
+    "delta_vs_d0": 0.0670,
+    "gate_passed": false,
+    "q1_delta_vs_d0": 0.1053,
+    "q2_delta_vs_d0": 0.0781
+  },
+  "canonical_patchcore_status": "CANONICAL_PATCHCORE_REFERENCE_BLOCKED",
+  "holdout_access_count": 0,
+  "generated_at": "2026-08-20T03:41:50.495630Z"
+}
