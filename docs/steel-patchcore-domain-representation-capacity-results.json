@@ -1,0 +1,138 @@
+{
+  "schema_version": "steel_patchcore_domain_representation_capacity_results_v1",
+  "protocol_version": "domain_representation_capacity_protocol_v1",
+  "verdict": "DOMAIN_REPRESENTATION_CAPACITY_GATE_FAILED",
+  "gate": {
+    "auroc_min": 0.70,
+    "delta_vs_d0": 0.10,
+    "strong_auroc": 0.80,
+    "capacity_delta_vs_d1": 0.03
+  },
+  "strong_signal": false,
+  "capacity_gain": false,
+  "small_defect_q1_delta_vs_d1": 0.0200,
+  "small_defect_q2_delta_vs_d1": 0.0232,
+  "small_defect_q1_delta_vs_d0": 0.1253,
+  "d0": {
+    "candidate": "S2",
+    "image_auroc": 0.6029,
+    "quartiles": {"Q1": 0.4790, "Q2": 0.5305, "Q3": 0.6145, "Q4": 0.7876},
+    "source": "frozen spatial-context results (WRN-50-2 layer3 + 5x5 context), not re-run"
+  },
+  "d1": {
+    "candidate": "D1",
+    "representation": "DINOv2 ViT-S/14 raw patch tokens",
+    "image_auroc": 0.6699,
+    "quartiles": {"Q1": 0.5843, "Q2": 0.6086, "Q3": 0.6607, "Q4": 0.8261},
+    "status": "DOMAIN_REPRESENTATION_GATE_FAILED",
+    "small_defect_signal": true,
+    "source": "frozen domain-representation results, not re-run"
+  },
+  "d2": {
+    "reference": {
+      "name": "DINOv2",
+      "model_identifier": "dinov2_vitb14",
+      "arch": "vit_base",
+      "implementation": "facebookresearch/dinov2 (official torch.hub)",
+      "license": "Apache-2.0",
+      "embed_dim": 768,
+      "depth": 12,
+      "num_heads": 12,
+      "mlp_ratio": 4,
+      "patch_size": 14,
+      "img_size": 518,
+      "num_register_tokens": 0,
+      "num_cls_tokens": 1,
+      "pretraining": "self-supervised DINOv2 on LVD-142M",
+      "weights_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+      "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "extraction": "model.forward_features(x)['x_norm_patchtokens'] (final LayerNorm patch tokens; CLS and any register tokens already excluded)",
+      "input_normalization": "ImageNet mean/std (0.485,0.456,0.406)/(0.229,0.224,0.225) on [0,1]",
+      "input_resize": "256x256 tile bilinearly resized to 252x252 (PatchEmbed requires H,W multiples of patch_size=14; 252=18*14 preserves all tile content)",
+      "reference_sha256": "586ae68c2b59e7acbf672d831289e5c913632ac612267bf0dffba2ce435dba3f"
+    },
+    "runtime_identity": {
+      "module": "dinov2.models.vision_transformer.DinoVisionTransformer",
+      "embed_dim": 768,
+      "patch_size": 14,
+      "img_size": [518, 518],
+      "depth": 12,
+      "num_heads": 12,
+      "num_register_tokens": 0,
+      "num_cls_tokens": 1,
+      "gpu": "NVIDIA GeForce RTX 5060",
+      "environment": {"python": "3.11.9", "torch": "2.11.0+cu128"},
+      "feedforward_output_keys": [
+        "x_norm_clstoken",
+        "x_norm_regtokens",
+        "x_norm_patchtokens",
+        "x_prenorm",
+        "masks"
+      ]
+    },
+    "bank_sha256": "383949c4aa0cfc1a31ab38bf925b5170fa33e01e6a2e822da07d08a3f1b292b3",
+    "bank_manifest": {
+      "candidate_id": "D2",
+      "representation": "DINOv2 ViT-B/14 spatial patch tokens (raw, per-patch L2)",
+      "model_identifier": "dinov2_vitb14",
+      "dim": 768,
+      "rows": 50000,
+      "dtype": "float32",
+      "sampling": "reservoir Algorithm R",
+      "seed": 42,
+      "budget": 50000,
+      "candidate_patches": 2268000,
+      "source": "train_normal_subset",
+      "source_count": 1000,
+      "bank_sha256": "383949c4aa0cfc1a31ab38bf925b5170fa33e01e6a2e822da07d08a3f1b292b3",
+      "subset_manifest_sha256": "8d39aec04c35ac7a7edc931c6dfb3494c6ada6a0a6e13e77b89bc894f9919075",
+      "reference_sha256": "586ae68c2b59e7acbf672d831289e5c913632ac612267bf0dffba2ce435dba3f",
+      "created_at": "2026-08-20T04:22:42.172423Z"
+    },
+    "metrics": {
+      "threshold": 0.6677728891372681,
+      "image_auroc": 0.6938,
+      "normal_distribution": {
+        "n": 300,
+        "min": 0.29018574953079224,
+        "p50": 0.4201757609844208,
+        "p95": 0.5701347976922989,
+        "p99": 0.6217992323637008,
+        "max": 0.7212258577346802
+      },
+      "anomaly_distribution": {
+        "n": 1000,
+        "min": 0.3174585700035095,
+        "p50": 0.47465381026268005,
+        "p95": 0.6499667584896087,
+        "p99": 0.7105811727046967,
+        "max": 0.7603644132614136
+      },
+      "anomaly_minus_normal_median": 0.05447804927825928,
+      "operating_point": {
+        "tp": 34,
+        "fp": 1,
+        "tn": 299,
+        "fn": 966,
+        "precision": 0.9714285714285714,
+        "recall": 0.034,
+        "f1": 0.06570048309178744,
+        "normal_fpr": 0.0033333333333333335,
+        "anomaly_recall": 0.034,
+        "confusion_matrix": [[299, 1], [966, 34]]
+      },
+      "quartiles": [
+        { "quartile": 1, "count": 250, "normal_vs_quartile_auroc": 0.6043 },
+        { "quartile": 2, "count": 250, "normal_vs_quartile_auroc": 0.6318 },
+        { "quartile": 3, "count": 250, "normal_vs_quartile_auroc": 0.7035 },
+        { "quartile": 4, "count": 250, "normal_vs_quartile_auroc": 0.8358 }
+      ]
+    },
+    "delta_vs_d0": 0.0909,
+    "delta_vs_d1": 0.0239,
+    "gate_passed": false
+  },
+  "canonical_patchcore_status": "CANONICAL_PATCHCORE_REFERENCE_BLOCKED",
+  "holdout_access_count": 0,
+  "generated_at": "2026-08-20T04:28:07.854570Z"
+}
