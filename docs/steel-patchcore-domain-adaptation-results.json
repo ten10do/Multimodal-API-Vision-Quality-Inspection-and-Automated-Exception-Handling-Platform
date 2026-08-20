@@ -1,0 +1,149 @@
+{
+  "schema_version": "steel_patchcore_domain_adaptation_results_v1",
+  "protocol_version": "domain_adaptation_protocol_v1",
+  "verdict": "STEEL_DOMAIN_ADAPTATION_SIGNAL_FOUND",
+  "gate": {
+    "auroc_min": 0.75,
+    "delta_vs_d2": 0.05,
+    "strong_auroc": 0.80,
+    "small_defect_q1_delta": 0.05
+  },
+  "strong_signal": true,
+  "small_defect_adaptation_signal": true,
+  "small_defect_q1_delta_vs_d2": 0.1298,
+  "small_defect_q1_delta_vs_d0": 0.2551,
+  "d0": {
+    "candidate": "S2",
+    "image_auroc": 0.6029,
+    "quartiles": {"Q1": 0.4790, "Q2": 0.5305, "Q3": 0.6145, "Q4": 0.7876},
+    "source": "frozen spatial-context results (WRN-50-2 layer3 + 5x5 context), not re-run"
+  },
+  "d1": {
+    "candidate": "D1",
+    "representation": "DINOv2 ViT-S/14 raw patch tokens",
+    "image_auroc": 0.6699,
+    "quartiles": {"Q1": 0.5843, "Q2": 0.6086, "Q3": 0.6607, "Q4": 0.8261},
+    "status": "DOMAIN_REPRESENTATION_GATE_FAILED",
+    "small_defect_signal": true,
+    "source": "frozen domain-representation results, not re-run"
+  },
+  "d2": {
+    "candidate": "D2",
+    "representation": "DINOv2 ViT-B/14 raw patch tokens",
+    "image_auroc": 0.6938,
+    "quartiles": {"Q1": 0.6043, "Q2": 0.6318, "Q3": 0.7035, "Q4": 0.8358},
+    "status": "DOMAIN_REPRESENTATION_CAPACITY_GATE_FAILED",
+    "source": "frozen capacity results, not re-run"
+  },
+  "d3": {
+    "reference": {
+      "name": "DINOv2",
+      "model_identifier": "dinov2_vitb14",
+      "arch": "vit_base",
+      "implementation": "facebookresearch/dinov2 (official torch.hub)",
+      "license": "Apache-2.0",
+      "embed_dim": 768,
+      "depth": 12,
+      "num_heads": 12,
+      "mlp_ratio": 4,
+      "patch_size": 14,
+      "img_size": 518,
+      "num_register_tokens": 0,
+      "num_cls_tokens": 1,
+      "pretraining": "self-supervised DINOv2 on LVD-142M",
+      "weights_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+      "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "extraction": "model.forward_features(x)['x_norm_patchtokens'] (final LayerNorm patch tokens; CLS and any register tokens already excluded)",
+      "input_normalization": "ImageNet mean/std (0.485,0.456,0.406)/(0.229,0.224,0.225) on [0,1]",
+      "input_resize": "256x256 tile bilinearly resized to 252x252 (PatchEmbed requires H,W multiples of patch_size=14; 252=18*14 preserves all tile content)"
+    },
+    "runtime_identity": {
+      "module": "dinov2.models.vision_transformer.DinoVisionTransformer",
+      "embed_dim": 768,
+      "patch_size": 14,
+      "img_size": [518, 518],
+      "depth": 12,
+      "num_heads": 12,
+      "num_register_tokens": 0,
+      "num_cls_tokens": 1,
+      "gpu": "NVIDIA GeForce RTX 5060",
+      "environment": {"python": "3.11.9", "torch": "2.11.0+cu128"}
+    },
+    "whitening_manifest": {
+      "candidate_id": "D3",
+      "adaptation": "train-normal ZCA covariance whitening",
+      "protocol_version": "domain_adaptation_protocol_v1",
+      "count": 2268000,
+      "dim": 768,
+      "epsilon": 2.028798674229261e-06,
+      "epsilon_rule": "1e-6 * trace(cov) / d",
+      "eigenvalue_min": 2.0287987228266116e-06,
+      "eigenvalue_max": 123.73093669971296,
+      "condition_number": 60987290.314992696,
+      "whitening_sha256": "e4b211f95241268be30318e9576c2cc01009e5009f9056ede92216832bdc5e28",
+      "dino_weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "diagnostic_manifest_sha256": "8d39aec04c35ac7a7edc931c6dfb3494c6ada6a0a6e13e77b89bc894f9919075",
+      "source": "train_normal_subset only",
+      "source_count": 1000,
+      "created_at": "2026-08-20T05:28:22.490705Z"
+    },
+    "sanity": {
+      "sample_size": 45360,
+      "max_abs_mean": 0.16866317884026674,
+      "mean_abs_mean": 0.042072722237785604,
+      "cov_diag_min": 0.34361433616166637,
+      "cov_diag_p50": 0.9969744777103937,
+      "cov_diag_max": 1.1910944840809763,
+      "cov_offdiag_abs_mean": 0.023970597507770426,
+      "cov_offdiag_abs_p95": 0.06023570133144418,
+      "cov_offdiag_abs_max": 0.17172822755977016,
+      "whitened_sample_shape": [45360, 768]
+    },
+    "bank_sha256": "a64c8a53619b94edb7214cc3ae6800eaa887faedbb58880bf467b7253e3a5933",
+    "metrics": {
+      "threshold": 0.8270467519760132,
+      "image_auroc": 0.8208,
+      "normal_distribution": {
+        "n": 300,
+        "min": 0.6733815670013428,
+        "p50": 0.7971153855323792,
+        "p95": 0.8269143402576447,
+        "p99": 0.8362346869707107,
+        "max": 0.8439098596572876
+      },
+      "anomaly_distribution": {
+        "n": 1000,
+        "min": 0.7629700899124146,
+        "p50": 0.817790687084198,
+        "p95": 0.8383271127939225,
+        "p99": 0.8450371658802033,
+        "max": 0.8546271920204163
+      },
+      "anomaly_minus_normal_median": 0.020675301551818848,
+      "operating_point": {
+        "tp": 241,
+        "fp": 14,
+        "tn": 286,
+        "fn": 759,
+        "precision": 0.9450980392156862,
+        "recall": 0.241,
+        "f1": 0.3840637450199203,
+        "normal_fpr": 0.04666666666666667,
+        "anomaly_recall": 0.241,
+        "confusion_matrix": [[286, 14], [759, 241]]
+      },
+      "quartiles": [
+        { "quartile": 1, "count": 250, "normal_vs_quartile_auroc": 0.7341 },
+        { "quartile": 2, "count": 250, "normal_vs_quartile_auroc": 0.7959 },
+        { "quartile": 3, "count": 250, "normal_vs_quartile_auroc": 0.8324 },
+        { "quartile": 4, "count": 250, "normal_vs_quartile_auroc": 0.9209 }
+      ]
+    },
+    "delta_vs_d2": 0.1270,
+    "delta_vs_d0": 0.2179,
+    "gate_passed": true
+  },
+  "canonical_patchcore_status": "CANONICAL_PATCHCORE_REFERENCE_BLOCKED",
+  "holdout_access_count": 0,
+  "generated_at": "2026-08-20T05:35:31.576503Z"
+}
