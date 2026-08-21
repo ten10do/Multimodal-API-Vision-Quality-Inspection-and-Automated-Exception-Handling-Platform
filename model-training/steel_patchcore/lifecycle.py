@@ -24,7 +24,12 @@ from pathlib import Path
 WORKSPACE = Path(__file__).resolve().parents[2]  # repo root
 LOCK_FILE = Path(__file__).resolve().parents[1] / "datasets/severstal-steel/raw/steel_lifecycle_lock.json"
 
-STEEL_SCRIPTS = ("train_steel_patchcore.py", "eval_steel_patchcore.py", "failure_case_steel.py")
+STEEL_SCRIPTS = (
+    "train_steel_patchcore.py",
+    "eval_steel_patchcore.py",
+    "failure_case_steel.py",
+    "run_steel_d3_recovery_holdout.py",
+)
 
 _JOB_HANDLE = None  # keep the Job Object handle alive for the process lifetime
 
