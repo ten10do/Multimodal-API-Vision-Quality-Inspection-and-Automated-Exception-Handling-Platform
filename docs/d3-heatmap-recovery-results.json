@@ -1,0 +1,150 @@
+{
+  "schema_version": "steel_patchcore_d3_heatmap_recovery_results_v1",
+  "protocol_version": "steel_patchcore_d3_heatmap_recovery_v1",
+  "candidate_status": "CANDIDATE",
+  "model_version": "1.2.0-candidate.1",
+  "artifact_version": "d3-full-development-9b1ea19",
+  "sample_count": 3333,
+  "paired_baseline": {
+    "pixel_auroc": 0.8343609621087148,
+    "aupro": 0.5875792560036618
+  },
+  "localization_gate": {
+    "pixel_auroc_min": 0.792642914003279,
+    "aupro_min": 0.5582002932034786,
+    "rule": "pixel_auroc >= paired_baseline*0.95 AND aupro >= paired_baseline*0.95"
+  },
+  "candidates": [
+    {
+      "candidate": "H0",
+      "definition": "current bilinear/mean map followed by per-image min-max normalization",
+      "pixel_auroc": 0.6002116911404504,
+      "aupro": 0.2652909077444871,
+      "image_score_unchanged": true,
+      "checks": {
+        "pixel_auroc": false,
+        "aupro": false
+      },
+      "verdict": "FAILED"
+    },
+    {
+      "candidate": "H1",
+      "definition": "raw 18x18 D3 patch distances projected with nearest-neighbor and mean stitching",
+      "pixel_auroc": 0.5803202943798632,
+      "aupro": 0.23901607067481678,
+      "image_score_unchanged": true,
+      "checks": {
+        "pixel_auroc": false,
+        "aupro": false
+      },
+      "verdict": "FAILED"
+    },
+    {
+      "candidate": "H2",
+      "definition": "whitened-feature cosine-1NN patch distances projected with bilinear and mean stitching",
+      "pixel_auroc": 0.6002116911404504,
+      "aupro": 0.2652909077444871,
+      "image_score_unchanged": true,
+      "checks": {
+        "pixel_auroc": false,
+        "aupro": false
+      },
+      "verdict": "FAILED"
+    },
+    {
+      "candidate": "H3",
+      "definition": "3x3 local mean on each 18x18 distance grid, then bilinear/mean stitching",
+      "pixel_auroc": 0.6529702127770137,
+      "aupro": 0.3293871611189974,
+      "image_score_unchanged": true,
+      "checks": {
+        "pixel_auroc": false,
+        "aupro": false
+      },
+      "verdict": "FAILED"
+    },
+    {
+      "candidate": "H4",
+      "definition": "5x5 Gaussian sigma=1 on each 18x18 distance grid, then bilinear/mean stitching",
+      "pixel_auroc": 0.6564366661920763,
+      "aupro": 0.33632739786102217,
+      "image_score_unchanged": true,
+      "checks": {
+        "pixel_auroc": false,
+        "aupro": false
+      },
+      "verdict": "FAILED"
+    },
+    {
+      "candidate": "H5",
+      "definition": "bilinear patch maps with linear feathering in the 192-pixel tile overlap",
+      "pixel_auroc": 0.5987866609990802,
+      "aupro": 0.26341354790511845,
+      "image_score_unchanged": true,
+      "checks": {
+        "pixel_auroc": false,
+        "aupro": false
+      },
+      "verdict": "FAILED"
+    }
+  ],
+  "best_candidate": {
+    "candidate": "H4",
+    "definition": "5x5 Gaussian sigma=1 on each 18x18 distance grid, then bilinear/mean stitching",
+    "pixel_auroc": 0.6564366661920763,
+    "aupro": 0.33632739786102217,
+    "image_score_unchanged": true,
+    "checks": {
+      "pixel_auroc": false,
+      "aupro": false
+    },
+    "verdict": "FAILED"
+  },
+  "overall_verdict": "FAILED",
+  "image_score_protection": {
+    "scoring": "D3 A0 global maximum before heatmap processing",
+    "sample_count": 3924,
+    "image_auroc_before": 0.8179071714278028,
+    "image_auroc_after_each_candidate": {
+      "H0": 0.8179071714278028,
+      "H1": 0.8179071714278028,
+      "H2": 0.8179071714278028,
+      "H3": 0.8179071714278028,
+      "H4": 0.8179071714278028,
+      "H5": 0.8179071714278028
+    },
+    "threshold_before": 0.8471092581748962,
+    "threshold_after_each_candidate": {
+      "H0": 0.8471092581748962,
+      "H1": 0.8471092581748962,
+      "H2": 0.8471092581748962,
+      "H3": 0.8471092581748962,
+      "H4": 0.8471092581748962,
+      "H5": 0.8471092581748962
+    },
+    "all_scores_unchanged": true
+  },
+  "artifact_hashes_before": {
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+    "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+  },
+  "artifact_hashes_after": {
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+    "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+  },
+  "artifact_unchanged": true,
+  "threshold_changed": false,
+  "production_promotion": false,
+  "failures": [],
+  "generated_at": "2026-08-21T03:52:38.438163Z"
+}
