@@ -120,6 +120,10 @@ class AnomalyResult(BaseModel):
 
     model_name: str = Field(min_length=1)
     model_version: str = Field(min_length=1)
+    artifact_version: str | None = Field(
+        default=None,
+        description="Immutable artifact bundle version; None for legacy anomaly models",
+    )
     anomaly_score: float = Field(ge=0.0, description="Image-level score (max of map)")
     threshold: float = Field(ge=0.0, description="Decision threshold from the normal set")
     is_anomalous: bool = Field(description="anomaly_score >= threshold (model-level, not business FAIL)")

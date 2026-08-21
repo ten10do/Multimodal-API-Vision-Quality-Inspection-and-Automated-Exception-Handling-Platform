@@ -10,6 +10,7 @@ import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from vision_contract import VisionResult
 
+from .d3_candidate_predictor import D3CandidatePredictor
 from .fusion import fuse
 from .patchcore_predictor import PatchCoreError, PatchCorePredictor
 from .yolo_predictor import ModelLoadError, VisionError, VisionInputError, YoloPredictor
@@ -20,6 +21,7 @@ WEIGHTS_DEFAULT = Path(__file__).resolve().parents[1] / "models" / "best.pt"
 WEIGHTS = Path(os.environ.get("IVQC_WEIGHTS", WEIGHTS_DEFAULT))
 PATCHCORE_BANK_DEFAULT = Path(__file__).resolve().parents[1] / "models" / "patchcore-bottle" / "bank.npz"
 PATCHCORE_BANK = Path(os.environ.get("IVQC_PATCHCORE_BANK", str(PATCHCORE_BANK_DEFAULT)))
+D3_CANDIDATE_MANIFEST = os.environ.get("IVQC_D3_CANDIDATE_MANIFEST")
 
 # Phase 8 (8D/8E): the deployment manifest pins the whole AI stack. The
 # inference service must resolve + SHA256-validate the artifacts against it
@@ -28,7 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1].parent
 MANIFEST_PATH = Path(os.environ.get("IVQC_MANIFEST", str(PROJECT_ROOT / "backend" / "config" / "deployment_manifest.yaml")))
 
 _predictor: YoloPredictor | None = None
-_anomaly: PatchCorePredictor | None = None
+_anomaly: PatchCorePredictor | D3CandidatePredictor | None = None
 _load_error: str | None = None
 
 
@@ -54,12 +56,26 @@ def get_predictor() -> YoloPredictor:
     return _predictor
 
 
-def get_anomaly_predictor() -> PatchCorePredictor | None:
+def get_anomaly_predictor() -> PatchCorePredictor | D3CandidatePredictor | None:
     """Load PatchCore lazily; return None when the bank is missing or the
     model cannot load. The YOLO path must never be blocked by it."""
     global _anomaly
     if _anomaly is not None:
         return _anomaly
+    if D3_CANDIDATE_MANIFEST:
+        manifest_path = Path(D3_CANDIDATE_MANIFEST).resolve()
+        try:
+            registry_root = manifest_path.parents[1]
+            _anomaly = D3CandidatePredictor.from_registry(
+                registry_root,
+                project_root=PROJECT_ROOT,
+                device=os.environ.get("IVQC_DEVICE") or None,
+            )
+            logger.info("D3 candidate loaded from %s on %s", manifest_path, _anomaly.device)
+            return _anomaly
+        except Exception:  # pragma: no cover - depends on runtime artifacts
+            logger.exception("D3 candidate failed closed; anomaly channel disabled")
+            return None
     if not PATCHCORE_BANK.exists():
         logger.warning("patchcore bank missing: %s (anomaly channel disabled)", PATCHCORE_BANK)
         return None

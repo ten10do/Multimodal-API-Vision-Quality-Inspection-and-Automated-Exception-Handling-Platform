@@ -1,0 +1,55 @@
+{
+  "schema_version": "steel_patchcore_d3_candidate_manifest_v1",
+  "status": "CANDIDATE",
+  "model_name": "steel-patchcore-d3-candidate",
+  "model_version": "1.2.0-candidate.1",
+  "artifact_version": "d3-full-development-9b1ea19",
+  "backbone": "dinov2_vitb14",
+  "weights_uri": "~/.cache/torch/hub/checkpoints/dinov2_vitb14_pretrain.pth",
+  "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+  "whitening_uri": "model-training/runs/steel-d3-full-development/D3-full-development/whitening.npz",
+  "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+  "bank_uri": "model-training/runs/steel-d3-full-development/D3-full-development/bank.npz",
+  "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+  "source_split_uri": "model-training/datasets/severstal-steel/split_manifest.json",
+  "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+  "recovery_split_uri": "model-training/datasets/severstal-steel/recovery_split_manifest.json",
+  "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+  "full_development_results_uri": "docs/steel-patchcore-d3-full-development-results.json",
+  "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+  "recovery_holdout_results_uri": "docs/steel-patchcore-d3-recovery-holdout-results.json",
+  "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e",
+  "threshold": 0.8471092581748962,
+  "aggregation": "A0",
+  "distance": "cosine-1NN",
+  "tile_config": {
+    "original_size": [256, 1600],
+    "tile_size": 256,
+    "model_input_size": 252,
+    "x_offsets": [0, 256, 512, 768, 1024, 1280, 1344],
+    "patch_grid": [18, 18],
+    "heatmap_overlap": "mean"
+  },
+  "embedding_dim": 768,
+  "created_at": "2026-08-21T02:26:47.235Z",
+  "evaluation_evidence": {
+    "full_development": {
+      "verdict": "D3_FULL_DEVELOPMENT_CONFIRMED",
+      "image_auroc": 0.8362,
+      "q1_q4": [0.7372, 0.8087, 0.8676, 0.9312]
+    },
+    "recovery_holdout": {
+      "verdict": "RECOVERY_HOLDOUT_PASS",
+      "image_auroc": 0.8179071714278028,
+      "bootstrap_95_ci": [0.7967992294153273, 0.8377211832858413],
+      "q1_q4": [0.7298170343855623, 0.7814629485782185, 0.8373112150156446, 0.9231916503490107]
+    }
+  },
+  "registration_evidence": {
+    "candidate_gate": "PASS",
+    "tests": "PASS",
+    "test_command": "pytest steel + backend + inference suites"
+  },
+  "production_promotion": false,
+  "manifest_payload_sha256": "dd5da3081dcea7635c40b60ef011859e67c3b119fcb15e5a4e3763d35c5ebefe"
+}
