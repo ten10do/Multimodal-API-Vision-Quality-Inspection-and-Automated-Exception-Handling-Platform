@@ -1,0 +1,134 @@
+{
+  "schema_version": "steel_patchcore_d3_recovery_holdout_results_v1",
+  "protocol_version": "d3_recovery_holdout_protocol_v1",
+  "verdict": "RECOVERY_HOLDOUT_PASS",
+  "gate": {
+    "image_auroc_min": 0.75,
+    "require_anomaly_median_gt_normal_median": true
+  },
+  "pre_holdout_freeze": {
+    "commit": "99b0bbbcc98e2355f16e390a7e0027daf8ea34e2"
+  },
+  "artifact_lineage": {
+    "baseline_bank_sha256": "291bb2903b6e9a3bc60ca4ae35380bd7cf312bc661366d10f87a75d3f0b8ebda",
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "evidence_manifest_sha256": "7067bbc6da747ffa90db9532729f579e19ee90fbcdf3867c96f2dd56a0d10303",
+    "dino_weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "d3_bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "quartile_manifest_sha256": "8d39aec04c35ac7a7edc931c6dfb3494c6ada6a0a6e13e77b89bc894f9919075",
+    "d3_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c"
+  },
+  "holdout_dataset": {
+    "test_normal": 591,
+    "recovery_holdout_anomaly": 3333,
+    "development_intersection": 0
+  },
+  "one_shot_execution": {
+    "checkpoint": "D:\\Multimodal API Vision Quality Inspection and Automated Exception Handling Platform\\model-training\\runs\\steel-d3-recovery-holdout\\checkpoint.json",
+    "resumed_counts": {
+      "test_normal": 0,
+      "recovery_holdout_anomaly": 0
+    },
+    "completed_counts": {
+      "test_normal": 591,
+      "recovery_holdout_anomaly": 3333
+    },
+    "holdout_access_count": 3924,
+    "one_final_result_per_original": true
+  },
+  "metrics": {
+    "image_auroc": 0.8179071714278028,
+    "normal_distribution": {
+      "n": 591,
+      "min": 0.6666797399520874,
+      "p50": 0.7956956028938293,
+      "p95": 0.8252429962158203,
+      "p99": 0.8330505907535553,
+      "max": 0.8457531929016113
+    },
+    "anomaly_distribution": {
+      "n": 3333,
+      "min": 0.7347317934036255,
+      "p50": 0.817256510257721,
+      "p95": 0.836722218990326,
+      "p99": 0.8437078547477722,
+      "max": 0.8539726138114929
+    },
+    "normal_median": 0.7956956028938293,
+    "anomaly_median": 0.817256510257721,
+    "anomaly_minus_normal_median": 0.0215609073638916,
+    "frozen_threshold": 0.8471092581748962,
+    "operating_point": {
+      "tp": 10,
+      "fp": 0,
+      "tn": 591,
+      "fn": 3323,
+      "precision": 1.0,
+      "recall": 0.003000300030003,
+      "f1": 0.005982650314089141,
+      "normal_fpr": 0.0,
+      "anomaly_recall": 0.003000300030003,
+      "confusion_matrix": [
+        [
+          591,
+          0
+        ],
+        [
+          3323,
+          10
+        ]
+      ]
+    },
+    "quartiles": [
+      {
+        "quartile": 1,
+        "count": 814,
+        "normal_vs_quartile_auroc": 0.7298170343855623
+      },
+      {
+        "quartile": 2,
+        "count": 843,
+        "normal_vs_quartile_auroc": 0.7814629485782185
+      },
+      {
+        "quartile": 3,
+        "count": 862,
+        "normal_vs_quartile_auroc": 0.8373112150156446
+      },
+      {
+        "quartile": 4,
+        "count": 814,
+        "normal_vs_quartile_auroc": 0.9231916503490107
+      }
+    ]
+  },
+  "bootstrap_ci": {
+    "seed": 42,
+    "iterations": 2000,
+    "median": 0.8180932306428612,
+    "percentile_95_ci": [
+      0.7967992294153273,
+      0.8377211832858413
+    ]
+  },
+  "quartile_analysis": {
+    "boundaries": {
+      "q1": 0.010888671875,
+      "q2": 0.02656494140625,
+      "q3": 0.07214111328125
+    },
+    "source": "frozen development representation_diagnostic_manifest.json",
+    "recomputed_on_holdout": false
+  },
+  "threshold_diagnostics_report_only": true,
+  "tests": {
+    "pre_holdout_command": ".venv/Scripts/python.exe -m pytest inference-service/tests/test_steel_d3_recovery_holdout.py -q"
+  },
+  "git": {
+    "branch": "feat/steel-patchcore-validity-recovery-v1.2",
+    "freeze_commit": "99b0bbbcc98e2355f16e390a7e0027daf8ea34e2"
+  },
+  "generated_at": "2026-08-21T02:15:50.926808Z"
+}
