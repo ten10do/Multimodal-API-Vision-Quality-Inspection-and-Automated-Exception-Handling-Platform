@@ -42,6 +42,7 @@ class ReasonCode(str, Enum):
     AI_SYSTEM_FAILURE = "AI_SYSTEM_FAILURE"
     LOW_CONFIDENCE = "LOW_CONFIDENCE"
     PLC_UNACKNOWLEDGED = "PLC_UNACKNOWLEDGED"
+    DATA_DISTRIBUTION_SHIFT = "DATA_DISTRIBUTION_SHIFT"
 
 
 class OperatorStatus(str, Enum):
@@ -77,6 +78,7 @@ _DECISION_REASONS: dict[Decision, set[ReasonCode]] = {
         ReasonCode.AI_SYSTEM_FAILURE,
         ReasonCode.LOW_CONFIDENCE,
         ReasonCode.PLC_UNACKNOWLEDGED,
+        ReasonCode.DATA_DISTRIBUTION_SHIFT,
     },
 }
 

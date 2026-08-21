@@ -39,10 +39,15 @@ class D3InferenceResult:
     heatmap_reference: str | None = None
     error: str | None = None
     latency_ms: float | None = None
+    # Additive fail-safe kind (edge/drift layer): "ai_system_failure" (default)
+    # or "data_distribution_shift". Only affects the HOLD reason code.
+    kind: str = "ai_system_failure"
 
     @staticmethod
-    def failure(error: str, latency_ms: float | None = None) -> "D3InferenceResult":
-        return D3InferenceResult(ok=False, error=error, latency_ms=latency_ms)
+    def failure(
+        error: str, latency_ms: float | None = None, *, kind: str = "ai_system_failure"
+    ) -> "D3InferenceResult":
+        return D3InferenceResult(ok=False, error=error, latency_ms=latency_ms, kind=kind)
 
 
 @dataclass
@@ -75,22 +80,27 @@ class DecisionEngine:
 
     def evaluate(self, result: D3InferenceResult) -> tuple[Decision, ReasonCode, str | None]:
         """Pure decision rule. Returns (decision, reason_code, error_detail)."""
+        hold_reason = (
+            ReasonCode.DATA_DISTRIBUTION_SHIFT
+            if result.kind == "data_distribution_shift"
+            else ReasonCode.AI_SYSTEM_FAILURE
+        )
         if not result.ok or result.error:
-            return self._hold(ReasonCode.AI_SYSTEM_FAILURE, result.error or "inference_failed")
+            return self._hold(hold_reason, result.error or "inference_failed")
         if result.image_score is None or result.threshold is None:
-            return self._hold(ReasonCode.AI_SYSTEM_FAILURE, "missing_image_score_or_threshold")
+            return self._hold(hold_reason, "missing_image_score_or_threshold")
         if not (math.isfinite(result.image_score) and math.isfinite(result.threshold)):
-            return self._hold(ReasonCode.AI_SYSTEM_FAILURE, "non_finite_image_score_or_threshold")
+            return self._hold(hold_reason, "non_finite_image_score_or_threshold")
         if result.model_version is None or result.artifact_version is None:
-            return self._hold(ReasonCode.AI_SYSTEM_FAILURE, "missing_model_or_artifact_version")
+            return self._hold(hold_reason, "missing_model_or_artifact_version")
         if result.model_version != self.policy.expected_model_version:
             return self._hold(
-                ReasonCode.AI_SYSTEM_FAILURE,
+                hold_reason,
                 f"model_version_mismatch:{result.model_version}",
             )
         if result.threshold != self.policy.reject_threshold:
             return self._hold(
-                ReasonCode.AI_SYSTEM_FAILURE,
+                hold_reason,
                 f"threshold_lineage_mismatch:{result.threshold}",
             )
         if result.image_score >= result.threshold:

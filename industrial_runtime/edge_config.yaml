@@ -1,0 +1,21 @@
+runtime:
+  device: cuda
+  batch_size: 1
+  timeout_ms: 3000
+
+logging:
+  level: INFO
+
+monitoring:
+  interval_seconds: 5
+
+# Data-drift monitoring thresholds (Phase 2). All configurable; the detector
+# never modifies the model - it only routes production decisions.
+drift:
+  psi_warning: 0.10
+  psi_critical: 0.25
+  cosine_warning: 0.05
+  cosine_critical: 0.20
+  mean_dist_warning: 0.30
+  mean_dist_critical: 1.00
+  min_baseline_samples: 200

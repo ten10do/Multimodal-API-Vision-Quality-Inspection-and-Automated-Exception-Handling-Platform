@@ -125,7 +125,11 @@ class LoopStore:
         return out
 
 
-def create_app(store: LoopStore) -> FastAPI:
+def create_app(
+    store: LoopStore,
+    runtime_manager=None,  # noqa: ANN001 - industrial_runtime.EdgeRuntimeManager, optional
+    drift_detector=None,  # noqa: ANN001 - monitoring.drift.DriftDetector, optional
+) -> FastAPI:
     app = FastAPI(title="IndustrialVision-QC Closed-Loop Dashboard", version="1.0.0")
 
     @app.get("/api/summary")
@@ -162,6 +166,42 @@ def create_app(store: LoopStore) -> FastAPI:
     @app.get("/api/plc/state")
     async def api_plc_state() -> dict:
         return store._plc_snapshot()
+
+    # --- edge runtime + drift monitoring extension (Phase 3) ---
+
+    @app.get("/api/runtime/status")
+    async def api_runtime_status() -> dict:
+        if runtime_manager is None:
+            return {"available": False}
+        return {
+            "available": True,
+            "runtime": runtime_manager.get_status(),
+            "health": runtime_manager.health_check(),
+        }
+
+    @app.get("/api/runtime/history")
+    async def api_runtime_history() -> list[dict]:
+        if runtime_manager is None:
+            return []
+        return [m.as_dict() for m in runtime_manager.monitor.history()]
+
+    @app.get("/api/drift/status")
+    async def api_drift_status() -> dict:
+        if drift_detector is None:
+            return {"available": False}
+        latest = drift_detector.latest()
+        return {
+            "available": True,
+            "state": latest.state.value if latest else None,
+            "thresholds": drift_detector.thresholds.as_dict(),
+            "latest": latest.as_dict() if latest else None,
+        }
+
+    @app.get("/api/drift/history")
+    async def api_drift_history() -> list[dict]:
+        if drift_detector is None:
+            return []
+        return [r.as_dict() for r in drift_detector.history()]
 
     @app.get("/", response_class=HTMLResponse)
     async def index() -> str:
@@ -201,15 +241,23 @@ _PAGE = """<!DOCTYPE html>
   .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
   @media (max-width:900px){ .grid2{grid-template-columns:1fr;} }
   .mono { font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:#8fa3b8; }
+  .nav a { color:#9fb0c3; text-decoration:none; font-size:13px; padding:4px 10px; border-radius:8px; }
+  .nav a:hover { background:#20303f; color:#fff; }
 </style>
 </head>
 <body>
 <header>
   <h1>IndustrialVision-QC · Closed-Loop Dashboard</h1>
+  <nav class="nav">
+    <a href="#/" data-page="live">Live</a>
+    <a href="#/runtime" data-page="runtime">Runtime</a>
+    <a href="#/drift" data-page="drift">Drift</a>
+  </nav>
   <span class="pill" id="plc-state">PLC ?</span>
   <span class="pill" id="updated">—</span>
 </header>
 <main>
+  <div id="page-live">
   <div class="cards">
     <div class="card total"><h2>Total inspected</h2><div class="v" id="c-total">0</div></div>
     <div class="card pass"><h2>PASS</h2><div class="v" id="c-pass">0</div></div>
@@ -225,6 +273,39 @@ _PAGE = """<!DOCTYPE html>
     </section>
     <section><h2>Latest events</h2>
       <table id="events"><thead><tr><th>time</th><th>product</th><th>camera</th><th>decision</th><th>reason</th><th>PLC</th><th>MES</th><th>operator</th></tr></thead><tbody></tbody></table>
+    </section>
+  </div>
+  </div><!-- /page-live -->
+
+  <div id="page-runtime" style="display:none">
+    <div class="cards">
+      <div class="card total"><h2>Runtime state</h2><div class="v" id="rt-state">—</div></div>
+      <div class="card"><h2>CPU %</h2><div class="v" id="rt-cpu">—</div></div>
+      <div class="card"><h2>Memory MB</h2><div class="v" id="rt-mem">—</div></div>
+      <div class="card"><h2>GPU MB</h2><div class="v" id="rt-gpu">—</div></div>
+      <div class="card"><h2>Latency ms</h2><div class="v" id="rt-lat">—</div></div>
+      <div class="card"><h2>Throughput r/s</h2><div class="v" id="rt-tps">—</div></div>
+    </div>
+    <section><h2>Services</h2>
+      <table id="rt-services"><thead><tr><th>service</th><th>status</th><th>last error</th></tr></thead><tbody></tbody></table>
+    </section>
+    <section><h2>Metrics history</h2>
+      <table id="rt-history"><thead><tr><th>time</th><th>cpu %</th><th>mem MB</th><th>gpu MB</th><th>latency ms</th><th>requests</th><th>errors</th><th>r/s</th></tr></thead><tbody></tbody></table>
+    </section>
+  </div>
+
+  <div id="page-drift" style="display:none">
+    <div class="cards">
+      <div class="card hold"><h2>Drift state</h2><div class="v" id="dr-state">—</div></div>
+      <div class="card total"><h2>PSI (mean)</h2><div class="v" id="dr-psi">—</div></div>
+      <div class="card"><h2>PSI (max dim)</h2><div class="v" id="dr-psimax">—</div></div>
+      <div class="card"><h2>Cosine shift</h2><div class="v" id="dr-cos">—</div></div>
+      <div class="card"><h2>Embedding dist</h2><div class="v" id="dr-dist">—</div></div>
+      <div class="card"><h2>Evaluations</h2><div class="v" id="dr-evals">—</div></div>
+    </div>
+    <section><h2>Thresholds (config-driven)</h2><div class="mono" id="dr-thresholds">—</div></section>
+    <section><h2>Evaluation history</h2>
+      <table id="dr-history"><thead><tr><th>time</th><th>state</th><th>psi mean</th><th>psi max</th><th>cosine</th><th>dist</th><th>alerts</th></tr></thead><tbody></tbody></table>
     </section>
   </div>
 </main>
@@ -250,8 +331,7 @@ function drawTrend(rows){
 }
 async function refresh(){
   try{
-    const s = await (await fetch("/api/summary")).json();
-    $("c-total").textContent=s.total; $("c-pass").textContent=s.pass;
+    const s = await (await fetch("/api/summary")).json();    $("c-total").textContent=s.total; $("c-pass").textContent=s.pass;
     $("c-reject").textContent=s.reject; $("c-hold").textContent=s.hold;
     $("c-mes").textContent=(s.mes&&s.mes.OPEN)||0; $("c-rev").textContent=(s.reviews&&s.reviews.pending)||0;
     $("plc-state").textContent="PLC "+((s.plc&&s.plc.state)||"?");
@@ -285,7 +365,67 @@ async function refresh(){
       <td class="mono">${e.mes_status}</td><td class="mono">${e.operator_status}</td></tr>`).join("");
   }catch(err){ console.error(err); }
 }
+async function refreshRuntime(){
+  try{
+    const st = await (await fetch("/api/runtime/status")).json();
+    if(!st.available){ $("rt-state").textContent="n/a"; return; }
+    $("rt-state").textContent = st.runtime.state;
+    $("rt-services").tBodies[0].innerHTML = Object.entries(st.runtime.services)
+      .map(([name, info]) => {
+        const svc = (st.health.services||{})[name] || "unknown";
+        return `<tr><td class="mono">${name}</td><td class="mono">${svc}</td>
+                <td class="mono">${(info.last_error||"—").slice(0,60)}</td></tr>`;
+      }).join("");
+    const m = st.health.metrics || {};
+    $("rt-cpu").textContent = m.cpu_percent ?? "—";
+    $("rt-mem").textContent = m.memory_mb ?? "—";
+    $("rt-gpu").textContent = m.gpu_memory_mb ?? "n/a";
+    $("rt-lat").textContent = m.latency_ms ?? "—";
+    $("rt-tps").textContent = m.requests_per_second ?? "—";
+    const hist = await (await fetch("/api/runtime/history")).json();
+    $("rt-history").tBodies[0].innerHTML = hist.slice(-12).reverse().map(r=>`<tr>
+      <td class="mono">${(r.timestamp||"").slice(11,19)}</td>
+      <td class="mono">${r.cpu_percent}</td><td class="mono">${r.memory_mb}</td>
+      <td class="mono">${r.gpu_memory_mb ?? "n/a"}</td><td class="mono">${r.latency_ms ?? "—"}</td>
+      <td class="mono">${r.request_count}</td><td class="mono">${r.error_count}</td>
+      <td class="mono">${r.requests_per_second}</td></tr>`).join("");
+  }catch(err){ console.error(err); }
+}
+async function refreshDrift(){
+  try{
+    const st = await (await fetch("/api/drift/status")).json();
+    if(!st.available){ $("dr-state").textContent="n/a"; return; }
+    $("dr-state").textContent = st.state || "NO DATA";
+    $("dr-evals").textContent = st.latest ? "see history" : "0";
+    $("dr-thresholds").textContent = JSON.stringify(st.thresholds);
+    if(st.latest){
+      $("dr-psi").textContent = st.latest.psi_mean;
+      $("dr-psimax").textContent = st.latest.psi_max;
+      $("dr-cos").textContent = st.latest.cosine_shift;
+      $("dr-dist").textContent = st.latest.mean_distance;
+    }
+    const hist = await (await fetch("/api/drift/history")).json();
+    $("dr-history").tBodies[0].innerHTML = hist.slice().reverse().map(r=>`<tr>
+      <td class="mono">${(r.timestamp||"").slice(11,19)}</td>
+      <td>${tag(r.state==="CRITICAL"?"REJECT":r.state==="WARNING"?"HOLD":"PASS")}</td>
+      <td class="mono">${r.psi_mean}</td><td class="mono">${r.psi_max}</td>
+      <td class="mono">${r.cosine_shift}</td><td class="mono">${r.mean_distance}</td>
+      <td class="mono">${(r.alerts||[]).join("; ").slice(0,50)||"—"}</td></tr>`).join("");
+  }catch(err){ console.error(err); }
+}
+function route(){
+  const page = (location.hash || "#/").replace("#/","") || "live";
+  for(const id of ["live","runtime","drift"]){
+    document.getElementById("page-"+id).style.display = id===page ? "" : "none";
+  }
+  if(page==="runtime") refreshRuntime();
+  if(page==="drift") refreshDrift();
+}
+window.addEventListener("hashchange", route);
+route();
 refresh(); setInterval(refresh, 2000);
+setInterval(()=>{ if((location.hash||"#/")==="#/runtime") refreshRuntime();
+                  if(location.hash==="#/drift") refreshDrift(); }, 3000);
 </script>
 </body>
 </html>"""
