@@ -1,0 +1,36 @@
+{
+  "schema_version": "steel_patchcore_d3_clean_environment_verification_v1",
+  "simulation_scope": "fresh control-plane venv plus frozen CUDA inference runtime",
+  "install": {
+    "verdict": "PASS",
+    "evidence": "fresh-env-install.json"
+  },
+  "artifact_load": {
+    "verdict": "PASS",
+    "verified_hash_count": 8
+  },
+  "inference": {
+    "verdict": "PASS",
+    "image_id": "005da33cf",
+    "image_score": 0.808577299118042,
+    "anomaly_label": "NORMAL",
+    "heatmap_shape": [
+      256,
+      1600
+    ],
+    "model_version": "1.3.0-candidate.1",
+    "artifact_version": "d3-dual-rl3-0b148a6",
+    "threshold": 0.8471092581748962
+  },
+  "artifact_unchanged": true,
+  "tests": {
+    "verdict": "PASS",
+    "evidence": "release-test-report.json"
+  },
+  "verdict": "PASS",
+  "remaining_risks": [
+    "The full CUDA wheel stack was not downloaded into a second environment; artifact load and real inference used the frozen qualified CUDA runtime."
+  ],
+  "production_promotion": false,
+  "generated_at": "2026-08-21T07:04:18.546712Z"
+}

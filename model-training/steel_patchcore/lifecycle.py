@@ -32,6 +32,9 @@ STEEL_SCRIPTS = (
     "qualify_steel_d3_candidate.py",
     "investigate_steel_d3_heatmaps.py",
     "investigate_steel_d3_localization_representation.py",
+    "qualify_steel_d3_production_readiness.py",
+    "run_steel_d3_factory_acceptance.py",
+    "prepare_steel_d3_release.py",
 )
 
 _JOB_HANDLE = None  # keep the Job Object handle alive for the process lifetime

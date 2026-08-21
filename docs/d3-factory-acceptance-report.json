@@ -1,0 +1,58 @@
+{
+  "schema_version": "steel_patchcore_d3_factory_acceptance_v1",
+  "candidate": "steel-patchcore-d3-candidate@1.3.0-candidate.1",
+  "candidate_status": "PRODUCTION_CANDIDATE_QUALIFIED",
+  "artifact_version": "d3-dual-rl3-0b148a6",
+  "threshold": 0.8471092581748962,
+  "manifest_sha256": "284e7e7c6aa57158088e833b10c3f3c8c3156d94149323eaf50d87343028d909",
+  "phases": {
+    "industrial_pipeline": {
+      "verdict": "PASS",
+      "report": "docs/d3-fat-industrial-pipeline-report.json"
+    },
+    "throughput": {
+      "verdict": "PASS",
+      "report": "docs/d3-fat-throughput-report.json"
+    },
+    "plc_mes": {
+      "verdict": "PASS",
+      "report": "docs/d3-fat-plc-mes-report.json"
+    },
+    "drift": {
+      "verdict": "PASS",
+      "report": "docs/d3-fat-drift-report.json"
+    },
+    "human_feedback": {
+      "verdict": "PASS",
+      "report": "docs/d3-fat-human-feedback-report.json"
+    },
+    "tests": {
+      "schema_version": "steel_patchcore_d3_fat_test_report_v1",
+      "verdict": "PASS",
+      "steel": {
+        "passed": 242,
+        "skipped": 1,
+        "failed": 0,
+        "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q"
+      },
+      "inference": {
+        "passed": 270,
+        "skipped": 1,
+        "deselected": 4,
+        "failed": 0,
+        "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q"
+      },
+      "backend": {
+        "passed": 113,
+        "deselected": 22,
+        "failed": 0,
+        "command": "scripts/run_clean.sh python -m pytest backend/tests -q"
+      }
+    }
+  },
+  "verdict": "FACTORY_ACCEPTANCE_PASS",
+  "qualification_scope": "offline_factory_acceptance_only",
+  "production_promotion": false,
+  "automatic_retraining": false,
+  "generated_at": "2026-08-21T06:52:45.393987Z"
+}

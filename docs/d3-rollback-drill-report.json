@@ -1,0 +1,62 @@
+{
+  "schema_version": "steel_patchcore_d3_dual_rollback_v1",
+  "candidate_status": "CANDIDATE_ONLY",
+  "activated_candidate": {
+    "manifest_path": "D:\\Multimodal API Vision Quality Inspection and Automated Exception Handling Platform\\model-training\\registry\\steel-patchcore-d3-candidate\\1.3.0-candidate.1\\manifest.json",
+    "manifest_sha256": "284e7e7c6aa57158088e833b10c3f3c8c3156d94149323eaf50d87343028d909",
+    "model_name": "steel-patchcore-d3-candidate",
+    "model_version": "1.3.0-candidate.1",
+    "artifact_version": "d3-dual-rl3-0b148a6",
+    "artifact_hashes": {
+      "legacy_manifest": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+      "weights": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "whitening": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+      "image_bank": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+      "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+      "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+      "protocol": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a",
+      "investigation_results": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+    }
+  },
+  "previous_candidate": {
+    "manifest_path": "D:\\Multimodal API Vision Quality Inspection and Automated Exception Handling Platform\\model-training\\registry\\steel-patchcore-d3-candidate\\manifest.json",
+    "manifest_sha256": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "model_name": "steel-patchcore-d3-candidate",
+    "model_version": "1.2.0-candidate.1",
+    "artifact_version": "d3-full-development-9b1ea19",
+    "artifact_hashes": {
+      "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+      "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+      "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+      "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+      "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+      "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+    }
+  },
+  "rolled_back_active_candidate": {
+    "manifest_path": "D:\\Multimodal API Vision Quality Inspection and Automated Exception Handling Platform\\model-training\\registry\\steel-patchcore-d3-candidate\\manifest.json",
+    "manifest_sha256": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "model_name": "steel-patchcore-d3-candidate",
+    "model_version": "1.2.0-candidate.1",
+    "artifact_version": "d3-full-development-9b1ea19",
+    "artifact_hashes": {
+      "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+      "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+      "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+      "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+      "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+      "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+    }
+  },
+  "hash_mismatch_drill": {
+    "blocked": true,
+    "reason": "ROLLBACK_PREVIOUS_HASH_MISMATCH",
+    "state_unchanged": true
+  },
+  "automatic_production_upgrade": false,
+  "verdict": "PASS",
+  "production_promotion": false,
+  "generated_at": "2026-08-21T06:22:44.321365Z"
+}

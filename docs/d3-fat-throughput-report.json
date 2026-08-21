@@ -1,0 +1,50 @@
+{
+  "schema_version": "steel_patchcore_d3_fat_throughput_v1",
+  "simulation": {
+    "kind": "accelerated_discrete_event_with_measured_inference_replay",
+    "virtual_hours": 8,
+    "wall_clock_duration_claimed": false
+  },
+  "request_count": 4800,
+  "completed_count": 4800,
+  "failed_count": 0,
+  "workers": 2,
+  "throughput_per_hour": 600.0,
+  "throughput_per_second": 0.16666666666666666,
+  "queue_peak_depth": 17,
+  "queue_latency_ms": {
+    "p50_ms": 0.0,
+    "p95_ms": 0.0,
+    "p99_ms": 4532.6560710010945
+  },
+  "e2e_latency_ms": {
+    "p50_ms": 533.5153000019491,
+    "p95_ms": 553.7108000032604,
+    "p99_ms": 5063.866756002157
+  },
+  "timeout": {
+    "limit_ms": 2000.0,
+    "injected_count": 8,
+    "recovered_count": 8,
+    "exhausted_count": 0
+  },
+  "failure_recovery": {
+    "gateway_failures_injected": 8,
+    "total_recovered": 16,
+    "unrecovered": 0
+  },
+  "conservation_ok": true,
+  "verdict": "PASS",
+  "production_promotion": false,
+  "measured_profile": {
+    "source": "model-training/runs/steel-d3-production-readiness/stability-checkpoint.json",
+    "source_sha256": "43db33e1633755472a2fdb2d50ab1f7f8ca47136770639dfa8d2cff2ce8cc63b",
+    "sample_count": 240,
+    "latency_ms": {
+      "p50_ms": 533.4383499994146,
+      "p95_ms": 546.6743949986267,
+      "p99_ms": 562.1303029987756
+    },
+    "candidate_manifest_sha256": "284e7e7c6aa57158088e833b10c3f3c8c3156d94149323eaf50d87343028d909"
+  }
+}

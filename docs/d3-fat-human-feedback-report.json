@@ -1,0 +1,73 @@
+{
+  "schema_version": "steel_patchcore_d3_fat_human_feedback_report_v1",
+  "supported_feedback": [
+    "operator_review",
+    "false_positive",
+    "false_negative"
+  ],
+  "records": [
+    {
+      "schema_version": "steel_patchcore_d3_fat_feedback_v1",
+      "trace_id": "fat-plc-mes-01",
+      "image_id": "unknown-anomaly",
+      "operator": "fat-operator-1",
+      "feedback_type": "operator_review",
+      "annotation": {
+        "label": "surface_reviewed",
+        "note": "operator disposition required"
+      },
+      "prediction_snapshot": {
+        "result": "REVIEW_REQUIRED",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "source": "plc_mes_decision_contract_simulation"
+      },
+      "timestamp": "2026-08-21T09:00:00Z",
+      "automatic_retraining": false
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_feedback_v1",
+      "trace_id": "fat-plc-mes-01",
+      "image_id": "unknown-anomaly",
+      "operator": "fat-operator-2",
+      "feedback_type": "false_positive",
+      "annotation": {
+        "label": "clean",
+        "note": "operator accepted surface"
+      },
+      "prediction_snapshot": {
+        "result": "REVIEW_REQUIRED",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "source": "plc_mes_decision_contract_simulation"
+      },
+      "timestamp": "2026-08-21T09:00:00Z",
+      "automatic_retraining": false
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_feedback_v1",
+      "trace_id": "fat-plc-mes-00",
+      "image_id": "normal",
+      "operator": "fat-operator-3",
+      "feedback_type": "false_negative",
+      "annotation": {
+        "label": "defect",
+        "note": "operator found missed defect",
+        "bbox_xyxy": [
+          100,
+          40,
+          180,
+          120
+        ]
+      },
+      "prediction_snapshot": {
+        "result": "PASS",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "source": "plc_mes_decision_contract_simulation"
+      },
+      "timestamp": "2026-08-21T09:00:00Z",
+      "automatic_retraining": false
+    }
+  ],
+  "annotation_recorded": true,
+  "automatic_retraining": false,
+  "verdict": "PASS"
+}

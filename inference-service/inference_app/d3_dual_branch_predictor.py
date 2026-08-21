@@ -20,6 +20,7 @@ from steel_patchcore.d3_localization_representation import (  # noqa: E402
     INTERMEDIATE_BLOCK_INDEX,
     fuse_dense_maps,
 )
+from steel_patchcore.d3_production_readiness import threshold_margin_confidence  # noqa: E402
 from steel_patchcore.dual_candidate_registry import (  # noqa: E402
     DualCandidateRegistry,
     LoadedDualCandidate,
@@ -42,6 +43,7 @@ class D3DualInferenceOutput:
     image_score: float
     anomaly_label: str
     heatmap: np.ndarray
+    confidence: dict
     localization_metadata: dict
     threshold: float
     model_version: str
@@ -53,6 +55,8 @@ class D3DualInferenceOutput:
             "image_score": self.image_score,
             "anomaly_label": self.anomaly_label,
             "heatmap": self.heatmap,
+            "confidence": self.confidence,
+            "artifact_version": self.artifact_version,
             "localization_metadata": self.localization_metadata,
         }
 
@@ -169,6 +173,7 @@ class D3DualBranchPredictor:
             image_score=frozen_score,
             anomaly_label="ANOMALY" if frozen_score >= self.threshold else "NORMAL",
             heatmap=normalized,
+            confidence=threshold_margin_confidence(frozen_score, self.threshold),
             localization_metadata=self._metadata(),
             threshold=self.threshold,
             model_version=self.model_version,

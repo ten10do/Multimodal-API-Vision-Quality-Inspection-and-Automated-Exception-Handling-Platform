@@ -1,0 +1,34 @@
+{
+  "schema_version": "steel_patchcore_d3_release_test_report_v1",
+  "verdict": "PASS",
+  "release_package": {
+    "passed": 6,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_d3_release_package.py -q"
+  },
+  "steel": {
+    "passed": 248,
+    "skipped": 1,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q"
+  },
+  "inference": {
+    "passed": 276,
+    "skipped": 1,
+    "deselected": 4,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q"
+  },
+  "backend": {
+    "passed": 113,
+    "deselected": 22,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest backend/tests -q"
+  },
+  "backend_fresh_environment": {
+    "passed": 113,
+    "deselected": 22,
+    "failed": 0,
+    "command": "model-training/runs/steel-d3-release-verification/clean-venv/Scripts/python.exe -m pytest backend/tests -q"
+  }
+}

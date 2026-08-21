@@ -1,0 +1,53 @@
+{
+  "schema_version": "steel_patchcore_d3_runtime_monitor_qualification_v1",
+  "model_version": "1.3.0-candidate.1",
+  "artifact_version": "d3-dual-rl3-0b148a6",
+  "runtime_snapshot": {
+    "schema_version": "steel_patchcore_d3_runtime_monitor_v1",
+    "model_version": "1.3.0-candidate.1",
+    "artifact_version": "d3-dual-rl3-0b148a6",
+    "artifact_hashes": {
+      "legacy_manifest": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+      "weights": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "whitening": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+      "image_bank": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+      "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+      "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+      "protocol": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a",
+      "investigation_results": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+    },
+    "ready": true,
+    "failure_reason": null,
+    "request_count": 240,
+    "error_count": 0,
+    "error_rate": 0.0,
+    "latency_ms": {
+      "p50_ms": 533.6709499988501,
+      "p95_ms": 546.8798850004532,
+      "p99_ms": 562.4429750004855
+    },
+    "cpu_memory_peak_mb": 2090.30078125,
+    "gpu_memory_peak_mb": 781.9931640625,
+    "gpu_utilization_peak_percent": 100.0
+  },
+  "failure_drills": [
+    {
+      "failure": "artifact_hash_mismatch",
+      "fail_closed": true,
+      "reason": "RUNTIME_MONITOR_FAIL_CLOSED:OperationalQualificationError:ARTIFACT_HASH_MISMATCH"
+    },
+    {
+      "failure": "artifact_missing",
+      "fail_closed": true,
+      "reason": "RUNTIME_MONITOR_FAIL_CLOSED:FileNotFoundError:artifact missing"
+    },
+    {
+      "failure": "model_load_failure",
+      "fail_closed": true,
+      "reason": "RUNTIME_MONITOR_FAIL_CLOSED:OSError:model load failure"
+    }
+  ],
+  "verdict": "PASS",
+  "production_promotion": false,
+  "generated_at": "2026-08-21T06:08:17.173339Z"
+}

@@ -1,0 +1,111 @@
+{
+  "schema_version": "steel_patchcore_d3_human_review_v1",
+  "model_version": "1.3.0-candidate.1",
+  "artifact_version": "d3-dual-rl3-0b148a6",
+  "prediction_fields": [
+    "image_score",
+    "anomaly_label",
+    "heatmap",
+    "confidence",
+    "artifact_version"
+  ],
+  "confidence_semantics": "uncalibrated absolute threshold-margin ratio",
+  "feedback_types": [
+    "human_confirmation",
+    "false_positive",
+    "false_negative"
+  ],
+  "contract_examples": [
+    {
+      "schema_version": "steel_patchcore_d3_human_review_v1",
+      "image_id": "contract-anomaly",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "reviewer": "operator",
+      "feedback_type": "human_confirmation",
+      "reason": "confirmed anomaly",
+      "timestamp": "2026-08-21T06:22:41.098244Z",
+      "prediction_snapshot": {
+        "schema_version": "steel_patchcore_d3_human_review_v1",
+        "image_id": "contract-anomaly",
+        "image_score": 0.9,
+        "anomaly_label": "ANOMALY",
+        "heatmap_ref": "runtime://heatmap/contract-anomaly",
+        "confidence": {
+          "kind": "absolute_threshold_margin_ratio",
+          "value": 0.06243674155923796,
+          "calibrated_probability": false
+        },
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6"
+      },
+      "automatic_retraining": false,
+      "automatic_threshold_change": false
+    },
+    {
+      "schema_version": "steel_patchcore_d3_human_review_v1",
+      "image_id": "contract-anomaly",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "reviewer": "operator",
+      "feedback_type": "false_positive",
+      "reason": "clean steel",
+      "timestamp": "2026-08-21T06:22:41.098244Z",
+      "prediction_snapshot": {
+        "schema_version": "steel_patchcore_d3_human_review_v1",
+        "image_id": "contract-anomaly",
+        "image_score": 0.9,
+        "anomaly_label": "ANOMALY",
+        "heatmap_ref": "runtime://heatmap/contract-anomaly",
+        "confidence": {
+          "kind": "absolute_threshold_margin_ratio",
+          "value": 0.06243674155923796,
+          "calibrated_probability": false
+        },
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6"
+      },
+      "automatic_retraining": false,
+      "automatic_threshold_change": false
+    },
+    {
+      "schema_version": "steel_patchcore_d3_human_review_v1",
+      "image_id": "contract-normal",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "reviewer": "operator",
+      "feedback_type": "false_negative",
+      "reason": "missed defect",
+      "timestamp": "2026-08-21T06:22:41.098244Z",
+      "prediction_snapshot": {
+        "schema_version": "steel_patchcore_d3_human_review_v1",
+        "image_id": "contract-normal",
+        "image_score": 0.7,
+        "anomaly_label": "NORMAL",
+        "heatmap_ref": "runtime://heatmap/contract-normal",
+        "confidence": {
+          "kind": "absolute_threshold_margin_ratio",
+          "value": 0.17366031212059277,
+          "calibrated_probability": false
+        },
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6"
+      },
+      "automatic_retraining": false,
+      "automatic_threshold_change": false
+    }
+  ],
+  "workflow_document": "docs/d3-human-review-workflow.md",
+  "workflow_document_sha256": "fed517411a261dd392e14eaeb0f4b80653184b4d5bd81b7ec1fb9573fe9f6051",
+  "backend_capabilities": [
+    "claim ownership",
+    "immutable resolution",
+    "audit correction",
+    "human feedback metrics"
+  ],
+  "automatic_retraining": false,
+  "automatic_threshold_change": false,
+  "verdict": "PASS",
+  "production_promotion": false,
+  "generated_at": "2026-08-21T06:22:41.099252Z"
+}

@@ -160,7 +160,11 @@ def test_dual_inference_keeps_image_score_and_threshold_immutable(monkeypatch):
     assert output.image_score == frozen.anomaly_score
     assert output.threshold == FROZEN_THRESHOLD
     assert output.anomaly_label == "NORMAL"
-    assert set(output.summary()) == {"image_score", "anomaly_label", "heatmap", "localization_metadata"}
+    assert set(output.summary()) == {
+        "image_score", "anomaly_label", "heatmap", "confidence", "artifact_version", "localization_metadata"
+    }
+    assert output.confidence["calibrated_probability"] is False
+    assert output.artifact_version == "d3-dual-rl3-0b148a6"
     assert output.localization_metadata["branch"] == "R-L3"
 
 

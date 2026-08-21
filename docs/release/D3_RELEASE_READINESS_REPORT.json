@@ -1,0 +1,46 @@
+{
+  "schema_version": "steel_patchcore_d3_release_readiness_v1",
+  "release": "steel-patchcore-d3-release@1.3.0",
+  "candidate": "steel-patchcore-d3-candidate@1.3.0-candidate.1",
+  "candidate_status": "PRODUCTION_CANDIDATE_QUALIFIED",
+  "package_status": "RELEASE_CANDIDATE_PACKAGE",
+  "manifest_payload_sha256": "15202db8a0095f0a1ac62e0063af1e7ce70a4fee7837457596121dcf4ba47ae0",
+  "gates": {
+    "manifest_freeze": {
+      "verdict": "PASS",
+      "manifest": "model-training/registry/steel-patchcore-d3-release/1.3.0/manifest.json"
+    },
+    "documentation": {
+      "verdict": "PASS",
+      "documents": [
+        "system-architecture.md",
+        "model-card.md",
+        "deployment-guide.md",
+        "operation-manual.md",
+        "troubleshooting-guide.md",
+        "rollback-procedure.md"
+      ]
+    },
+    "clean_environment": {
+      "verdict": "PASS",
+      "report": "docs/release/clean-environment-verification.json"
+    },
+    "security": {
+      "verdict": "PASS",
+      "report": "docs/release/security-audit-report.json"
+    },
+    "tests": {
+      "verdict": "PASS",
+      "report": "docs/release/release-test-report.json"
+    }
+  },
+  "verdict": "PASS",
+  "remaining_risks": [
+    "gitleaks was not installed; the audit used the built-in strong-pattern secret scanner.",
+    "Two user-specific absolute paths remain in non-runtime dataset download utilities; they are excluded from release runtime execution.",
+    "The full CUDA wheel stack was not downloaded into a second environment; artifact load and real inference used the frozen qualified CUDA runtime."
+  ],
+  "production_promotion": false,
+  "automatic_retraining": false,
+  "generated_at": "2026-08-21T07:09:59.592321Z"
+}

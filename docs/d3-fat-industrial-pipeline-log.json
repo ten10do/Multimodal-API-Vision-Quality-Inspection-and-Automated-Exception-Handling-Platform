@@ -1,0 +1,281 @@
+{
+  "schema_version": "steel_patchcore_d3_fat_pipeline_log_v1",
+  "records": [
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-2f1807b55bb7fe8e14eb56fa",
+      "image_id": "005da33cf",
+      "timestamp": "2026-08-21T00:00:00Z",
+      "latency_ms": 2700.6905999987794,
+      "image_score": 0.808577299118042,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.04548641002917577,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-2f1807b55bb7fe8e14eb56fa.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-0e848ab6442fa26bc3ae299d",
+      "image_id": "4ef65d75b",
+      "timestamp": "2026-08-21T00:00:48Z",
+      "latency_ms": 525.2479000009771,
+      "image_score": 0.7979228496551514,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.058063830663021426,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-0e848ab6442fa26bc3ae299d.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-809b36d08b6c357647e8df83",
+      "image_id": "00ded7837",
+      "timestamp": "2026-08-21T00:01:36Z",
+      "latency_ms": 523.1060000005527,
+      "image_score": 0.7904453873634338,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.06689086474340414,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-809b36d08b6c357647e8df83.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-5c80e32b24f8b24a5be2235e",
+      "image_id": "e9a938877",
+      "timestamp": "2026-08-21T00:02:24Z",
+      "latency_ms": 521.408299999166,
+      "image_score": 0.79932701587677,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.05640623312401691,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-5c80e32b24f8b24a5be2235e.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-58f0804a57fb508618f8db49",
+      "image_id": "00fe7f023",
+      "timestamp": "2026-08-21T00:03:12Z",
+      "latency_ms": 520.9848000013153,
+      "image_score": 0.810238242149353,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.04352569124906286,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-58f0804a57fb508618f8db49.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-89a3d0de37a1b701973b904c",
+      "image_id": "0905fe055",
+      "timestamp": "2026-08-21T00:04:00Z",
+      "latency_ms": 521.0311999981059,
+      "image_score": 0.7986204028129578,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.057240379436305666,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-89a3d0de37a1b701973b904c.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-d7a95b00cf7ecc868bbc8106",
+      "image_id": "0101e2cf0",
+      "timestamp": "2026-08-21T00:04:48Z",
+      "latency_ms": 522.2170000015467,
+      "image_score": 0.8105480670928955,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.043159947467428364,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-d7a95b00cf7ecc868bbc8106.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-a42aeae7b506eab83db1d859",
+      "image_id": "8c81bbce4",
+      "timestamp": "2026-08-21T00:05:36Z",
+      "latency_ms": 522.279199998593,
+      "image_score": 0.8295000791549683,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.02078737642162842,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-a42aeae7b506eab83db1d859.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-c3549d45b9ee34d55a7cc9db",
+      "image_id": "017d75655",
+      "timestamp": "2026-08-21T00:06:24Z",
+      "latency_ms": 522.9234999969776,
+      "image_score": 0.7924909591674805,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.0644760973632744,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-c3549d45b9ee34d55a7cc9db.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-44616e65905a5e914e243750",
+      "image_id": "4d930ad34",
+      "timestamp": "2026-08-21T00:07:12Z",
+      "latency_ms": 524.0050000029441,
+      "image_score": 0.823190450668335,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.028235799899170674,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-44616e65905a5e914e243750.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-33501bdc02c268a2fefd6e87",
+      "image_id": "0202a5f22",
+      "timestamp": "2026-08-21T00:08:00Z",
+      "latency_ms": 525.9069999992789,
+      "image_score": 0.7845069766044617,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.07390107116207383,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-33501bdc02c268a2fefd6e87.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    },
+    {
+      "schema_version": "steel_patchcore_d3_fat_pipeline_v1",
+      "trace_id": "fat-f3009904a9616bf3e0414b99",
+      "image_id": "15ece0447",
+      "timestamp": "2026-08-21T00:08:48Z",
+      "latency_ms": 531.1121999984607,
+      "image_score": 0.8169135451316833,
+      "confidence": {
+        "kind": "absolute_threshold_margin_ratio",
+        "value": 0.03564559441632098,
+        "calibrated_probability": false
+      },
+      "result": "PASS",
+      "heatmap_path": "model-training/runs/steel-d3-factory-acceptance/heatmaps/fat-f3009904a9616bf3e0414b99.png",
+      "model_version": "1.3.0-candidate.1",
+      "artifact_version": "d3-dual-rl3-0b148a6",
+      "stages": {
+        "camera": "PASS",
+        "gateway": "PASS",
+        "inference": "PASS",
+        "decision": "PASS"
+      }
+    }
+  ]
+}

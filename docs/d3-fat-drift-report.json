@@ -1,0 +1,130 @@
+{
+  "schema_version": "steel_patchcore_d3_fat_drift_report_v1",
+  "signals": [
+    "feature_distribution",
+    "score_distribution",
+    "input_statistics"
+  ],
+  "sample_count": 8,
+  "baseline": {
+    "feature": [
+      -0.0009856183314695954,
+      0.0025346584152430296,
+      0.00038571993354707956,
+      -0.0019181926036253572,
+      0.006293033249676228,
+      0.003938563168048859,
+      0.00965788308531046,
+      0.0013171235332265496
+    ],
+    "score": [
+      0.808577299118042,
+      0.7979228496551514,
+      0.7904453873634338,
+      0.79932701587677,
+      0.810238242149353,
+      0.7986204028129578,
+      0.8105480670928955,
+      0.8295000791549683
+    ],
+    "input_mean": [
+      0.2229090929031372,
+      0.49146169424057007,
+      0.2517225742340088,
+      0.22287094593048096,
+      0.18985718488693237,
+      0.02993704192340374,
+      0.24512797594070435,
+      0.12649619579315186
+    ],
+    "input_std": [
+      0.21695803105831146,
+      0.19810007512569427,
+      0.06831906735897064,
+      0.1352449208498001,
+      0.08868034183979034,
+      0.06485698372125626,
+      0.07828867435455322,
+      0.1666567325592041
+    ]
+  },
+  "stable_window": {
+    "schema_version": "steel_patchcore_d3_fat_drift_v1",
+    "signals": {
+      "feature": {
+        "ks": 0.0,
+        "ks_level": "NORMAL",
+        "psi": 0.0,
+        "psi_level": "NORMAL",
+        "distribution_shift": false
+      },
+      "input_mean": {
+        "ks": 0.0,
+        "ks_level": "NORMAL",
+        "psi": 0.0,
+        "psi_level": "NORMAL",
+        "distribution_shift": false
+      },
+      "input_std": {
+        "ks": 0.0,
+        "ks_level": "NORMAL",
+        "psi": 0.0,
+        "psi_level": "NORMAL",
+        "distribution_shift": false
+      },
+      "score": {
+        "ks": 0.0,
+        "ks_level": "NORMAL",
+        "psi": 0.0,
+        "psi_level": "NORMAL",
+        "distribution_shift": false
+      }
+    },
+    "distribution_shift": false,
+    "trigger": "NONE",
+    "automatic_retraining": false,
+    "automatic_threshold_change": false
+  },
+  "brightness_shift_window": {
+    "factor": 1.3,
+    "schema_version": "steel_patchcore_d3_fat_drift_v1",
+    "signals": {
+      "feature": {
+        "ks": 0.125,
+        "ks_level": "WARNING",
+        "psi": 4.487634070469609,
+        "psi_level": "CRITICAL",
+        "distribution_shift": true
+      },
+      "input_mean": {
+        "ks": 0.5,
+        "ks_level": "CRITICAL",
+        "psi": 11.48201962465836,
+        "psi_level": "CRITICAL",
+        "distribution_shift": true
+      },
+      "input_std": {
+        "ks": 0.375,
+        "ks_level": "CRITICAL",
+        "psi": 7.696280924569711,
+        "psi_level": "CRITICAL",
+        "distribution_shift": true
+      },
+      "score": {
+        "ks": 0.25,
+        "ks_level": "WARNING",
+        "psi": 12.422630181675618,
+        "psi_level": "CRITICAL",
+        "distribution_shift": true
+      }
+    },
+    "distribution_shift": true,
+    "trigger": "WARNING",
+    "automatic_retraining": false,
+    "automatic_threshold_change": false
+  },
+  "trigger_action": "warning_only",
+  "automatic_retraining": false,
+  "artifact_unchanged": true,
+  "verdict": "PASS"
+}

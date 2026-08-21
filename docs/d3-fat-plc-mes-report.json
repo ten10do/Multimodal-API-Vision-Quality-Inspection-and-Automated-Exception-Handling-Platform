@@ -1,0 +1,232 @@
+{
+  "schema_version": "steel_patchcore_d3_fat_plc_mes_v1",
+  "decision_contract": [
+    "PASS",
+    "FAIL",
+    "REVIEW_REQUIRED"
+  ],
+  "command_mapping": {
+    "PASS": "RELEASE",
+    "REVIEW_REQUIRED": "HOLD",
+    "FAIL": "REJECT"
+  },
+  "records": [
+    {
+      "trace_id": "fat-plc-mes-00",
+      "case": "normal",
+      "decision": {
+        "schema_version": "steel_patchcore_d3_fat_decision_v1",
+        "trace_id": "fat-plc-mes-00",
+        "image_id": "normal",
+        "result": "PASS",
+        "reason": "normal_candidate",
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "command": {
+        "command_id": "cmd-fat-plc-mes-00-RELEASE",
+        "product_id": "product-0",
+        "inspection_id": "fat-plc-mes-00",
+        "command_type": "RELEASE",
+        "reason_code": "quality_pass",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "held": false,
+      "plc": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": false,
+          "command_id": "cmd-fat-plc-mes-00-RELEASE"
+        },
+        "executed": true
+      },
+      "plc_duplicate": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": true,
+          "command_id": "cmd-fat-plc-mes-00-RELEASE"
+        },
+        "executed": false
+      },
+      "mes": {
+        "response": {
+          "duplicate": false,
+          "inspection_id": "fat-plc-mes-00"
+        },
+        "written": true
+      },
+      "mes_duplicate": {
+        "response": {
+          "duplicate": true,
+          "inspection_id": "fat-plc-mes-00"
+        },
+        "written": false
+      }
+    },
+    {
+      "trace_id": "fat-plc-mes-01",
+      "case": "unknown-anomaly",
+      "decision": {
+        "schema_version": "steel_patchcore_d3_fat_decision_v1",
+        "trace_id": "fat-plc-mes-01",
+        "image_id": "unknown-anomaly",
+        "result": "REVIEW_REQUIRED",
+        "reason": "unresolved_unknown_anomaly",
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "command": {
+        "command_id": "cmd-fat-plc-mes-01-HOLD",
+        "product_id": "product-1",
+        "inspection_id": "fat-plc-mes-01",
+        "command_type": "HOLD",
+        "reason_code": "review_pending",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "held": true,
+      "plc": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": false,
+          "command_id": "cmd-fat-plc-mes-01-HOLD"
+        },
+        "executed": true
+      },
+      "plc_duplicate": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": true,
+          "command_id": "cmd-fat-plc-mes-01-HOLD"
+        },
+        "executed": false
+      },
+      "mes": {
+        "response": {
+          "duplicate": false,
+          "inspection_id": "fat-plc-mes-01"
+        },
+        "written": true
+      },
+      "mes_duplicate": {
+        "response": {
+          "duplicate": true,
+          "inspection_id": "fat-plc-mes-01"
+        },
+        "written": false
+      }
+    },
+    {
+      "trace_id": "fat-plc-mes-02",
+      "case": "confirmed-defect",
+      "decision": {
+        "schema_version": "steel_patchcore_d3_fat_decision_v1",
+        "trace_id": "fat-plc-mes-02",
+        "image_id": "confirmed-defect",
+        "result": "FAIL",
+        "reason": "confirmed_product_defect",
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "command": {
+        "command_id": "cmd-fat-plc-mes-02-REJECT",
+        "product_id": "product-2",
+        "inspection_id": "fat-plc-mes-02",
+        "command_type": "REJECT",
+        "reason_code": "product_defect",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "held": false,
+      "plc": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": false,
+          "command_id": "cmd-fat-plc-mes-02-REJECT"
+        },
+        "executed": true
+      },
+      "plc_duplicate": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": true,
+          "command_id": "cmd-fat-plc-mes-02-REJECT"
+        },
+        "executed": false
+      },
+      "mes": {
+        "response": {
+          "duplicate": false,
+          "inspection_id": "fat-plc-mes-02"
+        },
+        "written": true
+      },
+      "mes_duplicate": {
+        "response": {
+          "duplicate": true,
+          "inspection_id": "fat-plc-mes-02"
+        },
+        "written": false
+      }
+    },
+    {
+      "trace_id": "fat-plc-mes-03",
+      "case": "inference-timeout",
+      "decision": {
+        "schema_version": "steel_patchcore_d3_fat_decision_v1",
+        "trace_id": "fat-plc-mes-03",
+        "image_id": "inference-timeout",
+        "result": "REVIEW_REQUIRED",
+        "reason": "system_uncertainty:timeout",
+        "model_version": "1.3.0-candidate.1",
+        "artifact_version": "d3-dual-rl3-0b148a6",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "command": {
+        "command_id": "cmd-fat-plc-mes-03-HOLD",
+        "product_id": "product-3",
+        "inspection_id": "fat-plc-mes-03",
+        "command_type": "HOLD",
+        "reason_code": "inference_timeout",
+        "timestamp": "2026-08-21T08:00:00Z"
+      },
+      "held": true,
+      "plc": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": false,
+          "command_id": "cmd-fat-plc-mes-03-HOLD"
+        },
+        "executed": true
+      },
+      "plc_duplicate": {
+        "ack": "ACK",
+        "response": {
+          "duplicate": true,
+          "command_id": "cmd-fat-plc-mes-03-HOLD"
+        },
+        "executed": false
+      },
+      "mes": {
+        "response": {
+          "duplicate": false,
+          "inspection_id": "fat-plc-mes-03"
+        },
+        "written": true
+      },
+      "mes_duplicate": {
+        "response": {
+          "duplicate": true,
+          "inspection_id": "fat-plc-mes-03"
+        },
+        "written": false
+      }
+    }
+  ],
+  "trace_id_present": true,
+  "idempotency_verified": true,
+  "failure_safe_hold": true,
+  "verdict": "PASS",
+  "production_connection_used": false
+}

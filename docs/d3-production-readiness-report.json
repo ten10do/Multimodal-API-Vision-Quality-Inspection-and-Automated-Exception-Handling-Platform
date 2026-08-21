@@ -1,0 +1,62 @@
+{
+  "schema_version": "steel_patchcore_d3_production_readiness_v1",
+  "candidate_status": "CANDIDATE",
+  "model_name": "steel-patchcore-d3-candidate",
+  "model_version": "1.3.0-candidate.1",
+  "artifact_version": "d3-dual-rl3-0b148a6",
+  "threshold": 0.8471092581748962,
+  "phases": {
+    "stability": {
+      "verdict": "PASS",
+      "report": "docs/d3-24h-stability-report.json"
+    },
+    "robustness": {
+      "verdict": "PASS",
+      "report": "docs/d3-input-robustness-report.json"
+    },
+    "monitoring": {
+      "verdict": "PASS",
+      "report": "docs/d3-runtime-monitoring-report.json"
+    },
+    "human_review": {
+      "verdict": "PASS",
+      "report": "docs/d3-human-review-workflow-report.json"
+    },
+    "rollback": {
+      "verdict": "PASS",
+      "report": "docs/d3-rollback-drill-report.json"
+    },
+    "tests": {
+      "schema_version": "steel_patchcore_d3_production_readiness_tests_v1",
+      "verdict": "PASS",
+      "suites": {
+        "steel": {
+          "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q",
+          "passed": 232,
+          "skipped": 1,
+          "deselected": 0,
+          "status": "PASS"
+        },
+        "inference": {
+          "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q",
+          "passed": 260,
+          "skipped": 1,
+          "deselected": 4,
+          "status": "PASS"
+        },
+        "backend": {
+          "command": "scripts/run_clean.sh python -m pytest backend/tests -q",
+          "passed": 113,
+          "skipped": 0,
+          "deselected": 22,
+          "status": "PASS"
+        }
+      },
+      "generated_at": "2026-08-21T06:22:01.1099259Z"
+    }
+  },
+  "verdict": "PRODUCTION_CANDIDATE_QUALIFIED",
+  "qualification_note": "All six readiness phases passed; this is candidate qualification only and does not authorize deployment.",
+  "production_promotion": false,
+  "generated_at": "2026-08-21T06:22:44.324228Z"
+}

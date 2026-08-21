@@ -1,0 +1,156 @@
+{
+  "schema_version": "steel_patchcore_d3_input_robustness_v1",
+  "candidate_status": "CANDIDATE",
+  "model_version": "1.3.0-candidate.1",
+  "artifact_version": "d3-dual-rl3-0b148a6",
+  "sample": {
+    "normal": 48,
+    "anomaly": 144,
+    "selection_sha256": "d4f6bf668dd56a13d0a3f5fd9a6de93d33d9f786dc4bfe6ff86f2d848ec32c81",
+    "sampling": "deterministic evenly spaced sealed membership"
+  },
+  "gate": {
+    "image_auroc_min": 0.75,
+    "pixel_auroc_min": 0.75,
+    "aupro_min": 0.5
+  },
+  "conditions": [
+    {
+      "condition": "baseline",
+      "parameters": {
+        "operation": "identity"
+      },
+      "metrics": {
+        "image_auroc": 0.830150462962963,
+        "pixel_auroc": 0.9254789765949637,
+        "aupro": 0.8095326620364566
+      },
+      "checks": {
+        "image_auroc": true,
+        "pixel_auroc": true,
+        "aupro": true
+      },
+      "verdict": "PASS"
+    },
+    {
+      "condition": "brightness_shift",
+      "parameters": {
+        "factor": 1.15
+      },
+      "metrics": {
+        "image_auroc": 0.8362268518518519,
+        "pixel_auroc": 0.9248728774097208,
+        "aupro": 0.8081123405800318
+      },
+      "checks": {
+        "image_auroc": true,
+        "pixel_auroc": true,
+        "aupro": true
+      },
+      "verdict": "PASS"
+    },
+    {
+      "condition": "contrast_shift",
+      "parameters": {
+        "factor": 1.15
+      },
+      "metrics": {
+        "image_auroc": 0.8559027777777778,
+        "pixel_auroc": 0.924305084741714,
+        "aupro": 0.8067399020764651
+      },
+      "checks": {
+        "image_auroc": true,
+        "pixel_auroc": true,
+        "aupro": true
+      },
+      "verdict": "PASS"
+    },
+    {
+      "condition": "noise",
+      "parameters": {
+        "distribution": "deterministic gaussian",
+        "sigma_8bit": 5.0
+      },
+      "metrics": {
+        "image_auroc": 0.7935474537037037,
+        "pixel_auroc": 0.9243558125920184,
+        "aupro": 0.8046700937783587
+      },
+      "checks": {
+        "image_auroc": true,
+        "pixel_auroc": true,
+        "aupro": true
+      },
+      "verdict": "PASS"
+    },
+    {
+      "condition": "compression",
+      "parameters": {
+        "format": "JPEG",
+        "quality": 70
+      },
+      "metrics": {
+        "image_auroc": 0.8760127314814814,
+        "pixel_auroc": 0.9244263783715831,
+        "aupro": 0.8055886038251967
+      },
+      "checks": {
+        "image_auroc": true,
+        "pixel_auroc": true,
+        "aupro": true
+      },
+      "verdict": "PASS"
+    },
+    {
+      "condition": "small_resize",
+      "parameters": {
+        "intermediate_size": [
+          1568,
+          251
+        ],
+        "restored_size": [
+          1600,
+          256
+        ],
+        "interpolation": "bilinear"
+      },
+      "metrics": {
+        "image_auroc": 0.7824074074074074,
+        "pixel_auroc": 0.8567432527885773,
+        "aupro": 0.6450941070644627
+      },
+      "checks": {
+        "image_auroc": true,
+        "pixel_auroc": true,
+        "aupro": true
+      },
+      "verdict": "PASS"
+    }
+  ],
+  "artifact_hashes_before": {
+    "legacy_manifest": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "weights": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "image_bank": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+    "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+    "protocol": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a",
+    "investigation_results": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+  },
+  "artifact_hashes_after": {
+    "legacy_manifest": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "weights": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "image_bank": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+    "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+    "protocol": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a",
+    "investigation_results": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+  },
+  "artifact_unchanged": true,
+  "failures": [],
+  "verdict": "PASS",
+  "production_promotion": false,
+  "generated_at": "2026-08-21T06:20:12.643791Z"
+}

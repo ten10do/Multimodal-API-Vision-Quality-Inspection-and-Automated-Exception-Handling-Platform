@@ -1,0 +1,73 @@
+{
+  "schema_version": "steel_patchcore_d3_dependency_lock_v1",
+  "python": "3.11",
+  "cuda_wheel_index": "https://download.pytorch.org/whl/cu128",
+  "requirement_files": {
+    "inference": {
+      "uri": "inference-service/requirements.txt",
+      "sha256": "cd5655da215f0dfd0d5e85d2007b294391c1fc7ba4b4230cd9162c985c91a8b2"
+    },
+    "training": {
+      "uri": "model-training/requirements.txt",
+      "sha256": "2a8bfeab22c014d65640129400ec81cfba34b265083e7621d007d9258dfe2740"
+    },
+    "backend": {
+      "uri": "backend/requirements.txt",
+      "sha256": "d96ad6c3fc7780516e81a47d1b3cd8b28e23575d8e7f647b4f03f84bdb93b48c"
+    },
+    "vision_contract": {
+      "uri": "packages/vision-contract/pyproject.toml",
+      "sha256": "878a64bccf5d26a079be7a03d25257c2615fa068891ceeda710c36802bf20d7c"
+    }
+  },
+  "declared_packages": {
+    "inference": [
+      "torch==2.11.0+cu128",
+      "torchvision==0.26.0+cu128",
+      "ultralytics==8.4.115",
+      "opencv-python==4.12.0.88",
+      "numpy==2.2.6",
+      "pydantic==2.13.4"
+    ],
+    "training": [
+      "torch==2.11.0+cu128",
+      "torchvision==0.26.0+cu128",
+      "ultralytics==8.4.115",
+      "opencv-python==4.12.0.88",
+      "numpy==2.2.6",
+      "pydantic==2.13.4",
+      "pyyaml==6.0.3",
+      "pandas==3.0.5",
+      "pytest==9.1.1"
+    ],
+    "backend": [
+      "fastapi==0.141.1",
+      "uvicorn[standard]==0.52.1",
+      "sqlalchemy[asyncio]==2.0.51",
+      "asyncpg==0.31.0",
+      "alembic==1.18.5",
+      "httpx==0.28.1",
+      "python-multipart==0.0.32",
+      "pydantic==2.13.4",
+      "pydantic-settings==2.14.2",
+      "pytest==9.1.1",
+      "pytest-asyncio==1.4.0",
+      "aiosqlite==0.22.1"
+    ]
+  },
+  "qualification_runtime": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26100-SP0",
+    "torch": "2.11.0+cu128",
+    "cuda_available": true,
+    "packages": {
+      "torch": "2.11.0+cu128",
+      "torchvision": "0.26.0+cu128",
+      "numpy": "2.4.6",
+      "pandas": "2.3.3",
+      "pydantic": "2.13.4",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "lock_payload_sha256": "8b6677d2d486ecf7850c3b5c3ac1969c42aa10810dd334affa2812b82e295d69"
+}
