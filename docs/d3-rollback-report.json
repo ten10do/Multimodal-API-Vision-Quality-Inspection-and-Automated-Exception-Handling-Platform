@@ -1,0 +1,26 @@
+{
+  "schema_version": "steel_patchcore_d3_rollback_report_v1",
+  "status": "CANDIDATE_ONLY",
+  "active_candidate": {
+    "manifest_path": "model-training/registry/steel-patchcore-d3-candidate/manifest.json",
+    "manifest_sha256": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "model_name": "steel-patchcore-d3-candidate",
+    "model_version": "1.2.0-candidate.1",
+    "artifact_version": "d3-full-development-9b1ea19",
+    "artifact_hashes": {
+      "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+      "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+      "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+      "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+      "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+      "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+      "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+    }
+  },
+  "previous_candidate": null,
+  "previous_slot_supported": true,
+  "hash_verification_required_on_activate_and_rollback": true,
+  "automatic_production_upgrade": false,
+  "live_rollback_available": false,
+  "note": "No earlier D3 candidate manifest exists; the previous slot is populated atomically on the next authorized candidate activation."
+}

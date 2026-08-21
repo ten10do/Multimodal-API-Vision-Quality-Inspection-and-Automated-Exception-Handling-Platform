@@ -1,0 +1,30 @@
+{
+  "schema_version": "steel_patchcore_d3_monitoring_report_v1",
+  "fail_closed": true,
+  "request_count": 3924,
+  "error_count": 0,
+  "error_rate": 0.0,
+  "latency_ms": {
+    "p50_ms": 140.12134999984482,
+    "p95_ms": 146.28646000010121,
+    "p99_ms": 152.62678400056757
+  },
+  "gpu_memory_peak_mb": 2212.0,
+  "cpu_memory_peak_mb": 1826.328125,
+  "gpu_utilization_peak_percent": 94.0,
+  "artifact_hashes": {
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+    "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+  },
+  "artifact_unchanged": true,
+  "fail_closed_conditions": [
+    "artifact mismatch",
+    "missing file",
+    "model load failure"
+  ]
+}

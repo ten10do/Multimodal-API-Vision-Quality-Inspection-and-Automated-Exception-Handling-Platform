@@ -1,0 +1,65 @@
+{
+  "schema_version": "steel_patchcore_d3_operational_qualification_v1",
+  "candidate": "steel-patchcore-d3-candidate@1.2.0-candidate.1",
+  "status": "CANDIDATE ONLY",
+  "verdict": "OPERATIONAL_QUALIFICATION_FAILED",
+  "checks": {
+    "performance_schema": true,
+    "shadow_complete": true,
+    "inference_reproducibility": true,
+    "heatmap_acceptance": false,
+    "monitoring_fail_closed": true,
+    "rollback_mechanism": true,
+    "regression_tests": true,
+    "candidate_only": true
+  },
+  "results": {
+    "performance_1000": {
+      "image_count": 1000,
+      "latency_ms": {
+        "p50_ms": 140.19920000009733,
+        "p95_ms": 145.27953000001617,
+        "p99_ms": 149.49032099976648
+      },
+      "resources": {
+        "cpu_memory_peak_mb": 1806.49609375,
+        "gpu_memory_peak_mb": 2048.0,
+        "gpu_utilization_percent": 79.55291576673866,
+        "gpu_utilization_peak_percent": 92.0,
+        "resource_sample_count": 463,
+        "torch_gpu_allocated_peak_mb": 553.05078125,
+        "torch_gpu_reserved_peak_mb": 618.0
+      }
+    },
+    "shadow_record_count": 3924,
+    "shadow_error_count": 0,
+    "heatmap_metrics": {
+      "pixel_auroc_mean_per_image": 0.6002116911404504,
+      "aupro_mean_per_image": 0.2652909077444871
+    },
+    "paired_baseline_metrics": {
+      "pixel_auroc_mean_per_image": 0.8343609621087148,
+      "aupro_mean_per_image": 0.5875792560036618
+    },
+    "heatmap_deltas": {
+      "pixel_auroc": -0.23414927096826443,
+      "aupro": -0.3222883482591747
+    }
+  },
+  "production_promotion": false,
+  "threshold_changed": false,
+  "artifact_changed": false,
+  "git": {
+    "branch": "feat/steel-patchcore-validity-recovery-v1.2",
+    "head": "6c75fe4b5902e2653e544be687bcc38d28af0523"
+  },
+  "reports": {
+    "performance": "docs/d3-performance-report.json",
+    "shadow": "docs/d3-shadow-prediction-log.json",
+    "heatmap": "docs/heatmap-validation-report.json",
+    "monitoring": "docs/d3-monitoring-report.json",
+    "rollback": "docs/d3-rollback-report.json",
+    "regression_tests": "docs/d3-regression-test-report.json"
+  },
+  "generated_at": "2026-08-21T03:12:31.785272Z"
+}

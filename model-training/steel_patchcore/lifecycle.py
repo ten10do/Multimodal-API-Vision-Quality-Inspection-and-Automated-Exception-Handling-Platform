@@ -29,6 +29,7 @@ STEEL_SCRIPTS = (
     "eval_steel_patchcore.py",
     "failure_case_steel.py",
     "run_steel_d3_recovery_holdout.py",
+    "qualify_steel_d3_candidate.py",
 )
 
 _JOB_HANDLE = None  # keep the Job Object handle alive for the process lifetime

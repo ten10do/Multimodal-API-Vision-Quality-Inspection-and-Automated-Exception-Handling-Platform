@@ -1,0 +1,30 @@
+{
+  "schema_version": "steel_patchcore_d3_heatmap_validation_v1",
+  "candidate_status": "CANDIDATE",
+  "model_version": "1.2.0-candidate.1",
+  "artifact_version": "d3-full-development-9b1ea19",
+  "sample_count": 3333,
+  "evaluation_set": "sealed recovery_holdout_anomaly",
+  "metric_semantics": "mean of per-image full-resolution metrics; AUPRO integrated through background FPR=0.3",
+  "metrics": {
+    "pixel_auroc_mean_per_image": 0.6002116911404504,
+    "aupro_mean_per_image": 0.2652909077444871
+  },
+  "paired_baseline_comparison": {
+    "sample_count": 3333,
+    "baseline": "existing steel PatchCore checkpoint, same image IDs",
+    "pixel_auroc_mean_per_image": 0.8343609621087148,
+    "aupro_mean_per_image": 0.5875792560036618,
+    "pixel_auroc_delta": -0.23414927096826443,
+    "aupro_delta": -0.3222883482591747
+  },
+  "acceptance_gate": "candidate pixel AUROC and AUPRO must each be >= paired baseline",
+  "checks": {
+    "pixel_auroc_no_regression": false,
+    "aupro_no_regression": false
+  },
+  "verdict": "FAIL",
+  "image_score_gate_changed": false,
+  "threshold": 0.8471092581748962,
+  "generated_at": "2026-08-21T03:12:27.085238Z"
+}
