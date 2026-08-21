@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -11,6 +12,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from vision_contract import VisionResult
 
 from .d3_candidate_predictor import D3CandidatePredictor
+from .d3_dual_branch_predictor import D3DualBranchPredictor
 from .fusion import fuse
 from .patchcore_predictor import PatchCoreError, PatchCorePredictor
 from .yolo_predictor import ModelLoadError, VisionError, VisionInputError, YoloPredictor
@@ -30,7 +32,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1].parent
 MANIFEST_PATH = Path(os.environ.get("IVQC_MANIFEST", str(PROJECT_ROOT / "backend" / "config" / "deployment_manifest.yaml")))
 
 _predictor: YoloPredictor | None = None
-_anomaly: PatchCorePredictor | D3CandidatePredictor | None = None
+_anomaly: PatchCorePredictor | D3CandidatePredictor | D3DualBranchPredictor | None = None
 _load_error: str | None = None
 
 
@@ -56,7 +58,7 @@ def get_predictor() -> YoloPredictor:
     return _predictor
 
 
-def get_anomaly_predictor() -> PatchCorePredictor | D3CandidatePredictor | None:
+def get_anomaly_predictor() -> PatchCorePredictor | D3CandidatePredictor | D3DualBranchPredictor | None:
     """Load PatchCore lazily; return None when the bank is missing or the
     model cannot load. The YOLO path must never be blocked by it."""
     global _anomaly
@@ -65,12 +67,18 @@ def get_anomaly_predictor() -> PatchCorePredictor | D3CandidatePredictor | None:
     if D3_CANDIDATE_MANIFEST:
         manifest_path = Path(D3_CANDIDATE_MANIFEST).resolve()
         try:
-            registry_root = manifest_path.parents[1]
-            _anomaly = D3CandidatePredictor.from_registry(
-                registry_root,
-                project_root=PROJECT_ROOT,
-                device=os.environ.get("IVQC_DEVICE") or None,
-            )
+            schema_version = json.loads(manifest_path.read_text(encoding="utf-8")).get("schema_version")
+            if schema_version == "steel_patchcore_d3_dual_candidate_manifest_v1":
+                _anomaly = D3DualBranchPredictor.from_manifest(
+                    manifest_path, project_root=PROJECT_ROOT, device=os.environ.get("IVQC_DEVICE") or None
+                )
+            else:
+                registry_root = manifest_path.parents[1]
+                _anomaly = D3CandidatePredictor.from_registry(
+                    registry_root,
+                    project_root=PROJECT_ROOT,
+                    device=os.environ.get("IVQC_DEVICE") or None,
+                )
             logger.info("D3 candidate loaded from %s on %s", manifest_path, _anomaly.device)
             return _anomaly
         except Exception:  # pragma: no cover - depends on runtime artifacts

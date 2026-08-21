@@ -1,0 +1,83 @@
+{
+  "schema_version": "steel_patchcore_d3_dual_candidate_manifest_v1",
+  "status": "CANDIDATE",
+  "model_name": "steel-patchcore-d3-candidate",
+  "model_version": "1.3.0-candidate.1",
+  "artifact_version": "d3-dual-rl3-0b148a6",
+  "created_at": "2026-08-21T06:00:00Z",
+  "production_promotion": false,
+  "image_branch": {
+    "branch": "D3-ZCA",
+    "model_version": "1.2.0-candidate.1",
+    "artifact_version": "d3-full-development-9b1ea19",
+    "manifest_uri": "model-training/registry/steel-patchcore-d3-candidate/manifest.json",
+    "manifest_sha256": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "weights_uri": "~/.cache/torch/hub/checkpoints/dinov2_vitb14_pretrain.pth",
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_uri": "model-training/runs/steel-d3-full-development/D3-full-development/whitening.npz",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "bank_uri": "model-training/runs/steel-d3-full-development/D3-full-development/bank.npz",
+    "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "aggregation": "A0",
+    "distance": "cosine-1NN",
+    "threshold": 0.8471092581748962
+  },
+  "localization_branch": {
+    "branch": "R-L3",
+    "feature_protocol": {
+      "branch": "R-L3",
+      "fusion": "equal arithmetic mean of resized raw cosine-distance maps",
+      "components": {
+        "R-L1": {
+          "encoder": "DINOv2-B/14",
+          "feature": "normalized patch tokens after transformer block index 7",
+          "input_side": 252,
+          "grid": [18, 18],
+          "dimension": 768,
+          "distance": "cosine-1NN"
+        },
+        "R-L2": {
+          "encoder": "DINOv2-B/14",
+          "feature": "final normalized patch tokens at higher input resolution",
+          "input_side": 448,
+          "grid": [32, 32],
+          "dimension": 768,
+          "distance": "cosine-1NN"
+        }
+      },
+      "tile_stitching": "mean"
+    },
+    "banks": {
+      "R-L1": {
+        "uri": "model-training/runs/steel-d3-localization-representation/R-L1/bank.npz",
+        "sha256": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+        "rows": 50000,
+        "dimension": 768
+      },
+      "R-L2": {
+        "uri": "model-training/runs/steel-d3-localization-representation/R-L2/bank.npz",
+        "sha256": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+        "rows": 50000,
+        "dimension": 768
+      }
+    },
+    "protocol_uri": "docs/d3-dual-branch-protocol.md",
+    "evidence_uri": "docs/d3-localization-representation-results.json",
+    "evidence_sha256": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+  },
+  "hashes": {
+    "model_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "feature_sha256": "0b148a6789299535954957d590d6082a70976240793bf2e448a19a044c73c8ea",
+    "image_bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "localization_bank_sha256": "7292678f81804c62c0d6ebc4cbc9f81ac1214500618b04676f75ffd30b2aca32",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "protocol_sha256": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a"
+  },
+  "evaluation_gate": {
+    "image_auroc": 0.8179071714278028,
+    "pixel_auroc": 0.9241393857425543,
+    "aupro": 0.7993981069909584,
+    "verdict": "PASS"
+  },
+  "manifest_payload_sha256": "c9a2a56fef875ebf3f7cd2a0aee7f90730a284187140d454621812cfb2b1a99e"
+}

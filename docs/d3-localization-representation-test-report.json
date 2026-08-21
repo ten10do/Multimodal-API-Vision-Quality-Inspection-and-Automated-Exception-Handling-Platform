@@ -1,0 +1,20 @@
+{
+  "schema_version": "steel_patchcore_d3_localization_representation_tests_v1",
+  "suites": {
+    "steel": {
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q",
+      "status": "PASS",
+      "passed": 212,
+      "skipped": 1,
+      "deselected": 0
+    },
+    "inference": {
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q",
+      "status": "PASS",
+      "passed": 240,
+      "skipped": 1,
+      "deselected": 4
+    }
+  },
+  "generated_at": "2026-08-21T04:58:23.9302653Z"
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": "steel_patchcore_d3_dual_branch_tests_v1",
+  "candidate": "steel-patchcore-d3-candidate@1.3.0-candidate.1",
+  "suites": {
+    "steel": {
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q",
+      "status": "PASS",
+      "passed": 222,
+      "skipped": 1,
+      "deselected": 0
+    },
+    "inference": {
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q",
+      "status": "PASS",
+      "passed": 250,
+      "skipped": 1,
+      "deselected": 4
+    }
+  },
+  "generated_at": "2026-08-21T05:53:50.3939948Z"
+}

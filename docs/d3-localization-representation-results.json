@@ -1,0 +1,256 @@
+{
+  "schema_version": "steel_patchcore_d3_localization_representation_results_v1",
+  "protocol_version": "steel_patchcore_d3_localization_representation_v1",
+  "candidate_status": "CANDIDATE",
+  "model_version": "1.2.0-candidate.1",
+  "artifact_version": "d3-full-development-9b1ea19",
+  "frozen_baseline": {
+    "encoder": "DINOv2-B/14",
+    "adaptation": "train-normal ZCA",
+    "distance": "cosine-1NN",
+    "image_scoring": "D3 A0 global max",
+    "image_auroc": 0.8179071714278028,
+    "threshold": 0.8471092581748962
+  },
+  "dataset": {
+    "test_normal": 591,
+    "recovery_holdout_anomaly": 3333
+  },
+  "experimental_bank_policy": {
+    "rows": 50000,
+    "seed": 42,
+    "train_normal_count": 1000,
+    "candidate_artifact": false,
+    "hashes": {
+      "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+      "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+      "R-L4": "9cc52bf41f0fa2b4718d178f12fee36bc534f3b0b8258a09171dab1fa118d237"
+    }
+  },
+  "localization_gate": {
+    "pixel_auroc_min": 0.75,
+    "aupro_min": 0.5,
+    "image_auroc_min": 0.75
+  },
+  "representations": [
+    {
+      "candidate": "R-L1",
+      "representation": {
+        "encoder": "DINOv2-B/14",
+        "feature": "normalized patch tokens after transformer block index 7",
+        "input_side": 252,
+        "grid": [
+          18,
+          18
+        ],
+        "dimension": 768,
+        "distance": "cosine-1NN"
+      },
+      "standalone_representation_branch": {
+        "image_auroc": 0.5582317114960227,
+        "image_auroc_delta_vs_d3": -0.2596754599317801,
+        "image_score_delta_vs_d3": {
+          "mean_signed": -0.4891026732905803,
+          "mean_absolute": 0.4891026732905803,
+          "p95_absolute": 0.544109770655632,
+          "max_absolute": 0.5871663689613342
+        },
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": false
+        },
+        "verdict": "FAILED"
+      },
+      "image_auroc": 0.5582317114960227,
+      "pixel_auroc": 0.8907774660806475,
+      "aupro": 0.7241241200609467,
+      "dual_objective": {
+        "image_branch": "frozen D3 A0",
+        "pixel_branch": "R-L1",
+        "image_auroc": 0.8179071714278028,
+        "image_score_immutable": true,
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": true
+        },
+        "verdict": "PASS"
+      }
+    },
+    {
+      "candidate": "R-L2",
+      "representation": {
+        "encoder": "DINOv2-B/14",
+        "feature": "final normalized patch tokens at higher input resolution",
+        "input_side": 448,
+        "grid": [
+          32,
+          32
+        ],
+        "dimension": 768,
+        "distance": "cosine-1NN"
+      },
+      "standalone_representation_branch": {
+        "image_auroc": 0.6666118388488596,
+        "image_auroc_delta_vs_d3": -0.15129533257894323,
+        "image_score_delta_vs_d3": {
+          "mean_signed": -0.3430712932870779,
+          "mean_absolute": 0.3430712932870779,
+          "p95_absolute": 0.44066864252090454,
+          "max_absolute": 0.5112016201019287
+        },
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": false
+        },
+        "verdict": "FAILED"
+      },
+      "image_auroc": 0.6666118388488596,
+      "pixel_auroc": 0.9008839068160897,
+      "aupro": 0.7480562181309937,
+      "dual_objective": {
+        "image_branch": "frozen D3 A0",
+        "pixel_branch": "R-L2",
+        "image_auroc": 0.8179071714278028,
+        "image_score_immutable": true,
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": true
+        },
+        "verdict": "PASS"
+      }
+    },
+    {
+      "candidate": "R-L3",
+      "representation": {
+        "encoder": "DINOv2-B/14",
+        "feature": "equal fusion of R-L1 and R-L2 dense cosine-distance maps",
+        "input_side": [
+          252,
+          448
+        ],
+        "grid": [
+          256,
+          256
+        ],
+        "dimension": null,
+        "distance": "mean(R-L1 distance map, R-L2 distance map)"
+      },
+      "standalone_representation_branch": {
+        "image_auroc": 0.6616935805255653,
+        "image_auroc_delta_vs_d3": -0.15621359090223752,
+        "image_score_delta_vs_d3": {
+          "mean_signed": -0.452400229613047,
+          "mean_absolute": 0.452400229613047,
+          "p95_absolute": 0.5194298759102821,
+          "max_absolute": 0.5655235052108765
+        },
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": false
+        },
+        "verdict": "FAILED"
+      },
+      "image_auroc": 0.6616935805255653,
+      "pixel_auroc": 0.9241393857425543,
+      "aupro": 0.7993981069909584,
+      "dual_objective": {
+        "image_branch": "frozen D3 A0",
+        "pixel_branch": "R-L3",
+        "image_auroc": 0.8179071714278028,
+        "image_score_immutable": true,
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": true
+        },
+        "verdict": "PASS"
+      }
+    },
+    {
+      "candidate": "R-L4",
+      "representation": {
+        "encoder": "DINOv2-S/14 self-supervised",
+        "feature": "final normalized dense patch tokens",
+        "input_side": 252,
+        "grid": [
+          18,
+          18
+        ],
+        "dimension": 384,
+        "distance": "cosine-1NN"
+      },
+      "standalone_representation_branch": {
+        "image_auroc": 0.6497238556342944,
+        "image_auroc_delta_vs_d3": -0.16818331579350843,
+        "image_score_delta_vs_d3": {
+          "mean_signed": -0.4254782236011264,
+          "mean_absolute": 0.4254782236011264,
+          "p95_absolute": 0.5257191330194473,
+          "max_absolute": 0.5812997221946716
+        },
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": false
+        },
+        "verdict": "FAILED"
+      },
+      "image_auroc": 0.6497238556342944,
+      "pixel_auroc": 0.9147556550702022,
+      "aupro": 0.7740875212672094,
+      "dual_objective": {
+        "image_branch": "frozen D3 A0",
+        "pixel_branch": "R-L4",
+        "image_auroc": 0.8179071714278028,
+        "image_score_immutable": true,
+        "checks": {
+          "pixel_auroc": true,
+          "aupro": true,
+          "image_auroc": true
+        },
+        "verdict": "PASS"
+      }
+    }
+  ],
+  "dual_objective_design": {
+    "image_branch": "frozen D3 A0; byte-identical sealed scores",
+    "pixel_branch": "independent dense representation anomaly map",
+    "separation_supported": true,
+    "passing_pixel_branches": [
+      "R-L1",
+      "R-L2",
+      "R-L3",
+      "R-L4"
+    ],
+    "preferred_pixel_branch_by_localization": "R-L3"
+  },
+  "overall_verdict": "PASS",
+  "d3_artifact_hashes_before": {
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+    "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+  },
+  "d3_artifact_hashes_after": {
+    "weights_sha256": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening_sha256": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "bank_sha256": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "source_split_sha256": "64df9f817a995e64c7ee4d00e16962d94f500878fd1404d95227f26e7f913d07",
+    "recovery_split_sha256": "f60ce0a6aa012ad1d9a9636800c1e94f365940500f20b8deb2f7fd9ffbc55448",
+    "full_development_results_sha256": "1d511ccd20a6c007f6f0b298de8e7b5bd649ff6c229a183b60c06dda1bbca35c",
+    "recovery_holdout_results_sha256": "0d5e16663e327accdeeb9fc32a37193432fbca9753b83cd17249fc527361529e"
+  },
+  "artifact_unchanged": true,
+  "threshold_changed": false,
+  "production_promotion": false,
+  "failures": [],
+  "generated_at": "2026-08-21T04:57:31.334524Z"
+}
