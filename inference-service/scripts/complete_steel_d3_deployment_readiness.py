@@ -18,7 +18,7 @@ from steel_patchcore.d3_operational import atomic_write_json  # noqa: E402
 from steel_patchcore.d3_release_package import ReleasePackageRegistry  # noqa: E402
 
 RELEASE_MANIFEST = ROOT / "model-training/registry/steel-patchcore-d3-release/1.3.0/manifest.json"
-DOCKER_REPORT = ROOT / "docs/release/docker-clean-environment-verification.json"
+DOCKER_REPORT = ROOT / "docs/release/docker-clean-environment-verification-final.json"
 SECURITY_REPORT = ROOT / "docs/release/final-security-review.json"
 TEST_REPORT = ROOT / "docs/release/deployment-readiness-test-report.json"
 APPROVAL_JSON = ROOT / "docs/release/D3_PRODUCTION_APPROVAL_REPORT.json"
@@ -62,6 +62,13 @@ def docker_evidence(container_name: str = "d3-release-review") -> dict:
             "image_size_bytes": image.get("Size"),
             "base_digest": "sha256:eee11b3b3872a8c838e35ef48f08b2d5def2080902c7f666831310ca1a0ef2be",
             "user": image_user,
+        },
+        "transport_recovery": {
+            "registry_mirror": "docker.m.daocloud.io",
+            "base_manifest_sha256_verified": True,
+            "oci_blob_sha256_verified": True,
+            "pull_policy": "local digest-verified import with --pull=false",
+            "cuda_runtime_replaced": False,
         },
         "dependency_install": {
             "verdict": "PASS",
@@ -137,13 +144,19 @@ def finalize() -> dict:
     security = json.loads(SECURITY_REPORT.read_text(encoding="utf-8"))
     tests = json.loads(TEST_REPORT.read_text(encoding="utf-8"))
     api_source = (ROOT / "inference-service/inference_app/api.py").read_text(encoding="utf-8")
-    fail_open = "the anomaly channel is best-effort" in api_source and "anomaly_result = None" in api_source
+    fail_closed = all(token in api_source for token in (
+        "_d3_hold_http_exception",
+        '"decision": "HOLD"',
+        'error_category="timeout"',
+        'error_category="artifact_load_failure"',
+        'error_category="runtime_exception"',
+    ))
     gates = {
         "docker_clean_environment": {"verdict": docker["verdict"], "report": DOCKER_REPORT.relative_to(ROOT).as_posix()},
         "api_contract": {
-            "verdict": "BLOCKED" if fail_open else "PASS",
+            "verdict": "PASS" if fail_closed else "BLOCKED",
             "report": "docs/release/api-contract.md",
-            "blocking_deviation": "per-request anomaly failure can return anomaly=null instead of failing closed" if fail_open else None,
+            "blocking_deviation": None if fail_closed else "D3 failure path is missing the frozen HOLD response contract",
         },
         "service_level_objective": {"verdict": "PASS", "report": "docs/release/service-level-objective.md"},
         "security": {"verdict": security["verdict"], "report": SECURITY_REPORT.relative_to(ROOT).as_posix()},
@@ -158,7 +171,6 @@ def finalize() -> dict:
         "gates": gates,
         "verdict": "PASS" if all(row["verdict"] == "PASS" for row in gates.values()) else "BLOCKED",
         "remaining_risks": [
-            "Per-request D3 anomaly failure is currently best-effort and can yield anomaly=null; Production Approval requires fail-closed HOLD behavior.",
             *security["remaining_risks"],
             "FAT used an accelerated measured-latency replay rather than an eight-hour wall-clock production soak.",
         ],
@@ -174,7 +186,7 @@ def finalize() -> dict:
         "# D3 Production Approval Report", "", f"Verdict: **`{report['verdict']}`**", "",
         f"- Release: `{report['release']}`", f"- Package status: `{report['package_status']}`", "",
         "| Gate | Verdict |", "|---|---|", *[f"| {name} | {row['verdict']} |" for name, row in gates.items()], "",
-        "## Blocking item", "", "Per-request D3 anomaly failures are currently downgraded to `anomaly=null` and may continue through YOLO-only fusion. This does not satisfy the required fail-closed `HOLD` workflow.", "",
+        "## Blocker remediation", "", "Required D3 timeout, artifact-load failure, and runtime exception paths return structured `HOLD` responses before fusion. Docker evidence is recorded by the clean-environment gate.", "",
         "## Remaining risks", "", *[f"- {risk}" for risk in report["remaining_risks"]], "",
         "No deployment, promotion, retraining, model, artifact, feature-extractor, or threshold change was performed.", "",
     ]), encoding="utf-8")

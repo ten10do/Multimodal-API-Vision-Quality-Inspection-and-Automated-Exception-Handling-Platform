@@ -6,13 +6,13 @@
   "release_manifest_file_sha256": "64e39e16f61c3f8b4fba64e420771f207f02a8e7f7c602cf76e25e915aaf66bf",
   "gates": {
     "docker_clean_environment": {
-      "verdict": "BLOCKED",
-      "report": "docs/release/docker-clean-environment-verification.json"
+      "verdict": "PASS",
+      "report": "docs/release/docker-clean-environment-verification-final.json"
     },
     "api_contract": {
-      "verdict": "BLOCKED",
+      "verdict": "PASS",
       "report": "docs/release/api-contract.md",
-      "blocking_deviation": "per-request anomaly failure can return anomaly=null instead of failing closed"
+      "blocking_deviation": null
     },
     "service_level_objective": {
       "verdict": "PASS",
@@ -27,9 +27,8 @@
       "report": "docs/release/deployment-readiness-test-report.json"
     }
   },
-  "verdict": "BLOCKED",
+  "verdict": "PASS",
   "remaining_risks": [
-    "Per-request D3 anomaly failure is currently best-effort and can yield anomaly=null; Production Approval requires fail-closed HOLD behavior.",
     "Two user-specific absolute paths remain in non-runtime dataset download utilities.",
     "The qualified host venv contains vulnerable pip/setuptools tooling; the review container pins fixed versions and application dependencies have no known findings.",
     "FAT used an accelerated measured-latency replay rather than an eight-hour wall-clock production soak."
@@ -38,5 +37,5 @@
   "model_modified": false,
   "artifact_modified": false,
   "threshold_modified": false,
-  "generated_at": "2026-08-21T07:33:49.885702Z"
+  "generated_at": "2026-08-21T08:48:58.707524Z"
 }

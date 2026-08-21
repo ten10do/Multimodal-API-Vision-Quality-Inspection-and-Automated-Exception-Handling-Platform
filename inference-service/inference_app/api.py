@@ -36,6 +36,34 @@ _anomaly: PatchCorePredictor | D3CandidatePredictor | D3DualBranchPredictor | No
 _load_error: str | None = None
 
 
+class D3ArtifactLoadError(Exception):
+    """Raised when the configured D3 candidate cannot be loaded or verified."""
+
+
+def _d3_hold_http_exception(
+    trace_id: str,
+    *,
+    reason_code: str,
+    error_category: str,
+    message: str,
+) -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={
+            "error": {
+                "code": "d3_inference_failed",
+                "message": message,
+                "request_id": trace_id,
+                "trace_id": trace_id,
+                "reason_code": reason_code,
+                "d3_status": "FAILED",
+                "error_category": error_category,
+                "decision": "HOLD",
+            }
+        },
+    )
+
+
 def get_predictor() -> YoloPredictor:
     global _predictor, _load_error
     if _predictor is not None:
@@ -59,8 +87,12 @@ def get_predictor() -> YoloPredictor:
 
 
 def get_anomaly_predictor() -> PatchCorePredictor | D3CandidatePredictor | D3DualBranchPredictor | None:
-    """Load PatchCore lazily; return None when the bank is missing or the
-    model cannot load. The YOLO path must never be blocked by it."""
+    """Load the anomaly predictor lazily.
+
+    A configured D3 candidate is a required branch and therefore raises on
+    load or verification failure. Legacy optional PatchCore deployments keep
+    their existing nullable behavior.
+    """
     global _anomaly
     if _anomaly is not None:
         return _anomaly
@@ -81,9 +113,9 @@ def get_anomaly_predictor() -> PatchCorePredictor | D3CandidatePredictor | D3Dua
                 )
             logger.info("D3 candidate loaded from %s on %s", manifest_path, _anomaly.device)
             return _anomaly
-        except Exception:  # pragma: no cover - depends on runtime artifacts
-            logger.exception("D3 candidate failed closed; anomaly channel disabled")
-            return None
+        except Exception as exc:  # pragma: no cover - depends on runtime artifacts
+            logger.exception("D3 candidate load failed")
+            raise D3ArtifactLoadError(f"D3 candidate load failed: {exc}") from exc
     if not PATCHCORE_BANK.exists():
         logger.warning("patchcore bank missing: %s (anomaly channel disabled)", PATCHCORE_BANK)
         return None
@@ -178,17 +210,54 @@ def create_app() -> FastAPI:
             yolo = predictor.predict(image, inspection_id=inspection_id)
             latency_yolo = (time.perf_counter() - t0) * 1000.0
 
-            # PatchCore (independent channel, never blocks YOLO)
+            # PatchCore / D3 anomaly branch
             latency_anomaly = 0.0
             anomaly_result = None
-            anomaly_predictor = get_anomaly_predictor()
+            try:
+                anomaly_predictor = get_anomaly_predictor()
+            except D3ArtifactLoadError as exc:
+                logger.error("D3 artifact load failure trace_id=%s: %s", rid, exc)
+                raise _d3_hold_http_exception(
+                    rid,
+                    reason_code="d3_artifact_load_failure",
+                    error_category="artifact_load_failure",
+                    message=str(exc),
+                ) from exc
+            if D3_CANDIDATE_MANIFEST and anomaly_predictor is None:
+                exc = D3ArtifactLoadError("configured D3 candidate is unavailable")
+                logger.error("D3 artifact load failure trace_id=%s: %s", rid, exc)
+                raise _d3_hold_http_exception(
+                    rid,
+                    reason_code="d3_artifact_load_failure",
+                    error_category="artifact_load_failure",
+                    message=str(exc),
+                ) from exc
             if anomaly_predictor is not None:
                 t1 = time.perf_counter()
                 try:
                     anomaly_result = anomaly_predictor.predict(
                         pil_image, image_w=width, image_h=height, include_map_png=True
                     )
-                except Exception as exc:  # noqa: BLE001 - the anomaly channel is best-effort
+                except TimeoutError as exc:
+                    if D3_CANDIDATE_MANIFEST:
+                        logger.error("D3 inference timeout trace_id=%s: %s", rid, exc)
+                        raise _d3_hold_http_exception(
+                            rid,
+                            reason_code="d3_inference_timeout",
+                            error_category="timeout",
+                            message=str(exc),
+                        ) from exc
+                    logger.warning("patchcore inference timed out request_id=%s: %s", rid, exc)
+                    anomaly_result = None
+                except Exception as exc:  # noqa: BLE001 - legacy PatchCore remains optional
+                    if D3_CANDIDATE_MANIFEST:
+                        logger.error("D3 runtime exception trace_id=%s: %s", rid, exc)
+                        raise _d3_hold_http_exception(
+                            rid,
+                            reason_code="d3_runtime_failure",
+                            error_category="runtime_exception",
+                            message=str(exc),
+                        ) from exc
                     logger.warning("patchcore inference failed request_id=%s: %s", rid, exc)
                     anomaly_result = None
                 latency_anomaly = (time.perf_counter() - t1) * 1000.0

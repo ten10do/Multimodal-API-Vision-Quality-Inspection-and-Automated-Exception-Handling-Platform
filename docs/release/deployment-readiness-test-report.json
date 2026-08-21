@@ -1,28 +1,42 @@
 {
   "schema_version": "steel_patchcore_d3_deployment_readiness_tests_v1",
   "verdict": "PASS",
-  "deployment_readiness": {
-    "passed": 5,
-    "failed": 0,
-    "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_d3_deployment_readiness.py -q"
+  "before": {
+    "deployment_readiness": {"passed": 5, "failed": 0},
+    "steel": {"passed": 253, "skipped": 1, "failed": 0},
+    "inference": {"passed": 281, "skipped": 1, "deselected": 4, "failed": 0},
+    "backend": {"passed": 113, "deselected": 22, "failed": 0}
   },
-  "steel": {
-    "passed": 253,
-    "skipped": 1,
-    "failed": 0,
-    "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q"
+  "after": {
+    "deployment_readiness": {
+      "passed": 8,
+      "failed": 0,
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_d3_deployment_readiness.py -q"
+    },
+    "steel": {
+      "passed": 256,
+      "skipped": 1,
+      "failed": 0,
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q"
+    },
+    "inference": {
+      "passed": 284,
+      "skipped": 1,
+      "deselected": 4,
+      "failed": 0,
+      "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q"
+    },
+    "backend": {
+      "passed": 113,
+      "deselected": 22,
+      "failed": 0,
+      "command": "scripts/run_clean.sh python -m pytest backend/tests -q"
+    }
   },
-  "inference": {
-    "passed": 281,
-    "skipped": 1,
-    "deselected": 4,
-    "failed": 0,
-    "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q"
-  },
-  "backend": {
-    "passed": 113,
-    "deselected": 22,
-    "failed": 0,
-    "command": "scripts/run_clean.sh python -m pytest backend/tests -q"
+  "blocker_coverage": {
+    "d3_timeout_to_hold": "PASS",
+    "d3_artifact_load_failure_to_hold": "PASS",
+    "d3_runtime_exception_to_hold": "PASS",
+    "fusion_not_called_after_d3_failure": "PASS"
   }
 }

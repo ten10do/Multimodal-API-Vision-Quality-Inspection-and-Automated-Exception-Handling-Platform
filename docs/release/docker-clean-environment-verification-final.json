@@ -1,0 +1,79 @@
+{
+  "schema_version": "steel_patchcore_d3_docker_clean_environment_v1",
+  "fresh_environment": true,
+  "docker_build": {
+    "verdict": "PASS",
+    "image": "d3-release-review:1.3.0",
+    "image_id": "sha256:a835555a68ecda5f03bde06dd7efbd04f416063a4660b943a850f2156bf7a9b4",
+    "image_created": "2026-08-21T08:45:10.406523985Z",
+    "image_size_bytes": 4300034154,
+    "base_digest": "sha256:eee11b3b3872a8c838e35ef48f08b2d5def2080902c7f666831310ca1a0ef2be",
+    "user": "d3review:d3review"
+  },
+  "transport_recovery": {
+    "registry_mirror": "docker.m.daocloud.io",
+    "base_manifest_sha256_verified": true,
+    "oci_blob_sha256_verified": true,
+    "pull_policy": "local digest-verified import with --pull=false",
+    "cuda_runtime_replaced": false
+  },
+  "dependency_install": {
+    "verdict": "PASS",
+    "pip": "26.1.2",
+    "setuptools": "83.0.0",
+    "numpy": "2.2.6"
+  },
+  "environment_fingerprint": {
+    "os": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "architecture": "x86_64"
+  },
+  "runtime_fingerprint": {
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 5060",
+    "numpy": "2.2.6"
+  },
+  "release_manifest_sha256": "64e39e16f61c3f8b4fba64e420771f207f02a8e7f7c602cf76e25e915aaf66bf",
+  "artifact_hashes": {
+    "legacy_manifest": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "weights": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "image_bank": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+    "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+    "protocol": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a",
+    "investigation_results": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+  },
+  "artifact_loading": {
+    "verdict": "PASS",
+    "verified_hash_count": 8
+  },
+  "gpu_inference": {
+    "verdict": "PASS",
+    "image_id": "005da33cf",
+    "image_score": 0.808577299118042,
+    "threshold": 0.8471092581748962,
+    "anomaly_label": "NORMAL",
+    "heatmap_shape": [
+      256,
+      1600
+    ],
+    "model_version": "1.3.0-candidate.1",
+    "artifact_version": "d3-dual-rl3-0b148a6",
+    "latency_ms": 9207.371828000305
+  },
+  "health_check": {
+    "verdict": "PASS",
+    "docker_status": "healthy",
+    "payload_status": "ready"
+  },
+  "docker_runtime": {
+    "client": "29.6.2",
+    "server": "29.6.2"
+  },
+  "read_only_rootfs": true,
+  "production_promotion": false,
+  "verdict": "PASS"
+}

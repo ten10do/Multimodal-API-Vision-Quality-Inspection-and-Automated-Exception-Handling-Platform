@@ -47,5 +47,5 @@
     "The qualified host venv contains vulnerable pip/setuptools tooling; the review container pins fixed versions and application dependencies have no known findings."
   ],
   "production_promotion": false,
-  "generated_at": "2026-08-21T07:33:47.296892Z"
+  "generated_at": "2026-08-21T08:48:57.764879Z"
 }

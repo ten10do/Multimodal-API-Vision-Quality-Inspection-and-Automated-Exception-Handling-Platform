@@ -5,14 +5,14 @@ ARG APP_GID=10001
 
 RUN groupadd --gid ${APP_GID} d3review \
     && useradd --uid ${APP_UID} --gid ${APP_GID} --create-home d3review \
-    && python -m pip install --no-cache-dir pip==26.1.2 setuptools==83.0.0 \
-    && python -m pip install --no-cache-dir \
+    && python -m pip install --break-system-packages --no-cache-dir pip==26.1.2 setuptools==83.0.0 \
+    && python -m pip install --break-system-packages --no-cache-dir \
        numpy==2.2.6 \
        pydantic==2.13.4 \
        pillow==12.3.0
 
 COPY packages/vision-contract /opt/vision-contract
-RUN python -m pip install --no-cache-dir /opt/vision-contract
+RUN python -m pip install --break-system-packages --no-cache-dir /opt/vision-contract
 
 COPY inference-service/scripts/d3_release_container_review.py /opt/d3-review/container_review.py
 

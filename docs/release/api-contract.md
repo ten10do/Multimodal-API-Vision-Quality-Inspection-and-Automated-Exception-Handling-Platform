@@ -40,10 +40,19 @@ Unknown fields are forbidden by the shared Pydantic contract.
 | 422 | `invalid_image` | Image cannot be decoded or violates input handling | Reject request; do not infer |
 | 422 | FastAPI validation | Missing/invalid multipart field | Reject request |
 | 503 | `model_unavailable` | Model load or warm-up failed | Fail closed; hold production decision |
+| 503 | `d3_inference_failed` | Required D3 branch timed out, failed artifact loading, or raised at runtime | Fail closed to `HOLD`; never run YOLO-only fusion |
 | 500 | `vision_error` | Inference pipeline failure | Fail closed; record trace |
 | 200 | `status=not_ready` on `/ready` | Artifact/model verification failed | Do not route traffic |
 
 Errors include `detail.error.code`, `message`, and `request_id` when emitted by the inference handler.
+
+A D3 failure response additionally includes these frozen fields under `detail.error`:
+
+- `decision`: always `HOLD`
+- `reason_code`: `d3_inference_timeout`, `d3_artifact_load_failure`, or `d3_runtime_failure`
+- `trace_id`: the supplied or generated request trace
+- `d3_status`: always `FAILED`
+- `error_category`: `timeout`, `artifact_load_failure`, or `runtime_exception`
 
 ## Trace format
 
@@ -61,6 +70,4 @@ Errors include `detail.error.code`, `message`, and `request_id` when emitted by 
 5. Missing artifact, hash mismatch, invalid input, timeout, model failure, unknown state or unavailable downstream integration must fail closed to `HOLD`.
 6. Human feedback is recorded separately and never modifies the prediction snapshot, model, artifact or threshold.
 
-## Known blocking deviation
-
-The current `/v1/infer` implementation catches a per-request anomaly-branch exception, sets `anomaly` to `null`, and can still return HTTP 200 using YOLO-only fusion. That behavior does not satisfy the frozen rule that an unavailable required D3 branch must fail closed to `HOLD`. Production Approval remains blocked until the runtime and downstream decision path are changed and tested so this state cannot become an implicit release decision. This review does not modify that runtime behavior.
+The required D3 branch fails closed before fusion. Legacy deployments without a configured D3 candidate retain their existing optional PatchCore behavior. Successful `VisionResult` output and normal fusion semantics are unchanged.
