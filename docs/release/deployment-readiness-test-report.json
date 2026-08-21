@@ -1,0 +1,28 @@
+{
+  "schema_version": "steel_patchcore_d3_deployment_readiness_tests_v1",
+  "verdict": "PASS",
+  "deployment_readiness": {
+    "passed": 5,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_d3_deployment_readiness.py -q"
+  },
+  "steel": {
+    "passed": 253,
+    "skipped": 1,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest inference-service/tests/test_steel_*.py -q"
+  },
+  "inference": {
+    "passed": 281,
+    "skipped": 1,
+    "deselected": 4,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest inference-service/tests -q"
+  },
+  "backend": {
+    "passed": 113,
+    "deselected": 22,
+    "failed": 0,
+    "command": "scripts/run_clean.sh python -m pytest backend/tests -q"
+  }
+}

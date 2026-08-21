@@ -1,0 +1,198 @@
+"""Collect final deployment-review evidence without promoting the release."""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "model-training"))
+
+from steel_patchcore.candidate_registry import sha256_file  # noqa: E402
+from steel_patchcore.d3_deployment_readiness import SCHEMA_VERSION, validate_production_approval_report  # noqa: E402
+from steel_patchcore.d3_operational import atomic_write_json  # noqa: E402
+from steel_patchcore.d3_release_package import ReleasePackageRegistry  # noqa: E402
+
+RELEASE_MANIFEST = ROOT / "model-training/registry/steel-patchcore-d3-release/1.3.0/manifest.json"
+DOCKER_REPORT = ROOT / "docs/release/docker-clean-environment-verification.json"
+SECURITY_REPORT = ROOT / "docs/release/final-security-review.json"
+TEST_REPORT = ROOT / "docs/release/deployment-readiness-test-report.json"
+APPROVAL_JSON = ROOT / "docs/release/D3_PRODUCTION_APPROVAL_REPORT.json"
+APPROVAL_MD = ROOT / "docs/release/D3_PRODUCTION_APPROVAL_REPORT.md"
+RUNTIME_ROOT = ROOT / "model-training/runs/steel-d3-deployment-readiness"
+BACKEND_AUDIT = RUNTIME_ROOT / "pip-audit-backend-fixed.json"
+INFERENCE_AUDIT = RUNTIME_ROOT / "pip-audit-inference.json"
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _vulnerabilities(path: Path) -> list[dict]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return [
+        {"package": row["name"], "version": row.get("version"), **finding}
+        for row in payload["dependencies"]
+        for finding in row.get("vulns", [])
+    ]
+
+
+def docker_evidence(container_name: str = "d3-release-review") -> dict:
+    package = ReleasePackageRegistry(ROOT).load(RELEASE_MANIFEST)
+    image = json.loads(subprocess.check_output(["docker", "image", "inspect", "d3-release-review:1.3.0"], text=True))[0]
+    container = json.loads(subprocess.check_output(["docker", "inspect", container_name], text=True))[0]
+    with urllib.request.urlopen("http://127.0.0.1:18080/health", timeout=10) as response:
+        health = json.load(response)
+    docker_version = json.loads(subprocess.check_output(["docker", "version", "--format", "{{json .}}"], text=True))
+    image_user = image["Config"].get("User")
+    container_health = container["State"].get("Health", {}).get("Status")
+    artifacts_match = health.get("artifact_hashes") == package.artifact_hashes
+    report = {
+        "schema_version": "steel_patchcore_d3_docker_clean_environment_v1",
+        "fresh_environment": True,
+        "docker_build": {
+            "verdict": "PASS",
+            "image": "d3-release-review:1.3.0",
+            "image_id": image["Id"],
+            "image_created": image["Created"],
+            "image_size_bytes": image.get("Size"),
+            "base_digest": "sha256:eee11b3b3872a8c838e35ef48f08b2d5def2080902c7f666831310ca1a0ef2be",
+            "user": image_user,
+        },
+        "dependency_install": {
+            "verdict": "PASS",
+            "pip": "26.1.2",
+            "setuptools": "83.0.0",
+            "numpy": health["runtime_fingerprint"]["numpy"],
+        },
+        "environment_fingerprint": health["environment_fingerprint"],
+        "runtime_fingerprint": health["runtime_fingerprint"],
+        "release_manifest_sha256": health["release_manifest_sha256"],
+        "artifact_hashes": health["artifact_hashes"],
+        "artifact_loading": {"verdict": "PASS" if artifacts_match else "BLOCKED", "verified_hash_count": len(health["artifact_hashes"])},
+        "gpu_inference": {"verdict": "PASS", **health["inference"]},
+        "health_check": {"verdict": "PASS" if container_health == "healthy" else "BLOCKED", "docker_status": container_health, "payload_status": health["status"]},
+        "docker_runtime": {"client": docker_version["Client"]["Version"], "server": docker_version["Server"]["Version"]},
+        "read_only_rootfs": bool(container["HostConfig"].get("ReadonlyRootfs")),
+        "production_promotion": False,
+    }
+    report["verdict"] = "PASS" if (
+        image_user == "d3review:d3review" and artifacts_match and container_health == "healthy"
+        and report["read_only_rootfs"] and health["runtime_fingerprint"]["cuda_available"] is True
+    ) else "BLOCKED"
+    atomic_write_json(DOCKER_REPORT, report)
+    return report
+
+
+def security_review() -> dict:
+    prior = json.loads((ROOT / "docs/release/security-audit-report.json").read_text(encoding="utf-8"))
+    backend_vulnerabilities = _vulnerabilities(BACKEND_AUDIT)
+    inference_vulnerabilities = _vulnerabilities(INFERENCE_AUDIT)
+    runtime_findings = [row for row in inference_vulnerabilities if row["package"] not in {"pip", "setuptools"}]
+    dockerfile = (ROOT / "inference-service/Dockerfile.d3-release-review").read_text(encoding="utf-8")
+    toolchain_patched = "pip==26.1.2 setuptools==83.0.0" in dockerfile
+    staged_modes = subprocess.check_output(["git", "ls-files", "--stage"], cwd=ROOT, text=True).splitlines()
+    unsafe_modes = [line for line in staged_modes if not line.startswith(("100644 ", "100755 "))]
+    blocking = bool(
+        prior["blocking_findings"] or backend_vulnerabilities or runtime_findings or not toolchain_patched or unsafe_modes
+    )
+    report = {
+        "schema_version": "steel_patchcore_d3_final_security_review_v1",
+        "checks": {
+            "secrets": prior["checks"]["secrets"],
+            "absolute_paths": prior["checks"]["hardcoded_paths"],
+            "dependency_vulnerabilities": {
+                "verdict": "PASS" if not backend_vulnerabilities and not runtime_findings and toolchain_patched else "BLOCKED",
+                "backend_clean_environment_count": len(backend_vulnerabilities),
+                "qualified_host_runtime_count": len(inference_vulnerabilities),
+                "qualified_host_runtime_application_count": len(runtime_findings),
+                "qualified_host_runtime_tooling_packages": sorted({row["package"] for row in inference_vulnerabilities}),
+                "container_toolchain_fix": {"pip": "26.1.2", "setuptools": "83.0.0", "pinned": toolchain_patched},
+            },
+            "permissions": {
+                "verdict": "PASS" if not unsafe_modes and "USER d3review:d3review" in dockerfile else "BLOCKED",
+                "unsafe_git_modes": unsafe_modes,
+                "container_user": "d3review:d3review",
+            },
+        },
+        "verdict": "BLOCKED" if blocking else "PASS",
+        "remaining_risks": [
+            "Two user-specific absolute paths remain in non-runtime dataset download utilities.",
+            "The qualified host venv contains vulnerable pip/setuptools tooling; the review container pins fixed versions and application dependencies have no known findings.",
+        ],
+        "production_promotion": False,
+        "generated_at": utc_now(),
+    }
+    atomic_write_json(SECURITY_REPORT, report)
+    return report
+
+
+def finalize() -> dict:
+    package = ReleasePackageRegistry(ROOT).load(RELEASE_MANIFEST)
+    docker = json.loads(DOCKER_REPORT.read_text(encoding="utf-8"))
+    security = json.loads(SECURITY_REPORT.read_text(encoding="utf-8"))
+    tests = json.loads(TEST_REPORT.read_text(encoding="utf-8"))
+    api_source = (ROOT / "inference-service/inference_app/api.py").read_text(encoding="utf-8")
+    fail_open = "the anomaly channel is best-effort" in api_source and "anomaly_result = None" in api_source
+    gates = {
+        "docker_clean_environment": {"verdict": docker["verdict"], "report": DOCKER_REPORT.relative_to(ROOT).as_posix()},
+        "api_contract": {
+            "verdict": "BLOCKED" if fail_open else "PASS",
+            "report": "docs/release/api-contract.md",
+            "blocking_deviation": "per-request anomaly failure can return anomaly=null instead of failing closed" if fail_open else None,
+        },
+        "service_level_objective": {"verdict": "PASS", "report": "docs/release/service-level-objective.md"},
+        "security": {"verdict": security["verdict"], "report": SECURITY_REPORT.relative_to(ROOT).as_posix()},
+        "tests": {"verdict": tests["verdict"], "report": TEST_REPORT.relative_to(ROOT).as_posix()},
+    }
+    report = {
+        "schema_version": SCHEMA_VERSION,
+        "release": "steel-patchcore-d3-release@1.3.0",
+        "package_status": "RELEASE_CANDIDATE_PACKAGE",
+        "release_manifest_payload_sha256": package.manifest["manifest_payload_sha256"],
+        "release_manifest_file_sha256": sha256_file(RELEASE_MANIFEST),
+        "gates": gates,
+        "verdict": "PASS" if all(row["verdict"] == "PASS" for row in gates.values()) else "BLOCKED",
+        "remaining_risks": [
+            "Per-request D3 anomaly failure is currently best-effort and can yield anomaly=null; Production Approval requires fail-closed HOLD behavior.",
+            *security["remaining_risks"],
+            "FAT used an accelerated measured-latency replay rather than an eight-hour wall-clock production soak.",
+        ],
+        "production_promotion": False,
+        "model_modified": False,
+        "artifact_modified": False,
+        "threshold_modified": False,
+        "generated_at": utc_now(),
+    }
+    validate_production_approval_report(report)
+    atomic_write_json(APPROVAL_JSON, report)
+    APPROVAL_MD.write_text("\n".join([
+        "# D3 Production Approval Report", "", f"Verdict: **`{report['verdict']}`**", "",
+        f"- Release: `{report['release']}`", f"- Package status: `{report['package_status']}`", "",
+        "| Gate | Verdict |", "|---|---|", *[f"| {name} | {row['verdict']} |" for name, row in gates.items()], "",
+        "## Blocking item", "", "Per-request D3 anomaly failures are currently downgraded to `anomaly=null` and may continue through YOLO-only fusion. This does not satisfy the required fail-closed `HOLD` workflow.", "",
+        "## Remaining risks", "", *[f"- {risk}" for risk in report["remaining_risks"]], "",
+        "No deployment, promotion, retraining, model, artifact, feature-extractor, or threshold change was performed.", "",
+    ]), encoding="utf-8")
+    return report
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stage", choices=("docker", "security", "finalize", "all"), default="all")
+    args = parser.parse_args()
+    if args.stage in {"docker", "all"}:
+        docker_evidence()
+    if args.stage in {"security", "all"}:
+        security_review()
+    if args.stage in {"finalize", "all"}:
+        finalize()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

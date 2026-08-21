@@ -1,0 +1,32 @@
+FROM pytorch/pytorch:2.11.0-cuda12.8-cudnn9-runtime@sha256:eee11b3b3872a8c838e35ef48f08b2d5def2080902c7f666831310ca1a0ef2be
+
+ARG APP_UID=10001
+ARG APP_GID=10001
+
+RUN groupadd --gid ${APP_GID} d3review \
+    && useradd --uid ${APP_UID} --gid ${APP_GID} --create-home d3review \
+    && python -m pip install --no-cache-dir pip==26.1.2 setuptools==83.0.0 \
+    && python -m pip install --no-cache-dir \
+       numpy==2.2.6 \
+       pydantic==2.13.4 \
+       pillow==12.3.0
+
+COPY packages/vision-contract /opt/vision-contract
+RUN python -m pip install --no-cache-dir /opt/vision-contract
+
+COPY inference-service/scripts/d3_release_container_review.py /opt/d3-review/container_review.py
+
+ENV D3_PROJECT_ROOT=/workspace \
+    D3_REVIEW_PORT=8080 \
+    HOME=/home/d3review \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+USER d3review:d3review
+EXPOSE 8080
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=90s --retries=6 \
+  CMD ["python", "/opt/d3-review/container_review.py", "healthcheck"]
+
+ENTRYPOINT ["python", "/opt/d3-review/container_review.py"]
+CMD ["serve"]

@@ -1,0 +1,51 @@
+{
+  "schema_version": "steel_patchcore_d3_final_security_review_v1",
+  "checks": {
+    "secrets": {
+      "verdict": "PASS",
+      "findings": []
+    },
+    "absolute_paths": {
+      "verdict": "PASS_WITH_RISK",
+      "findings": [
+        {
+          "file": "model-training/steel_patchcore/download.py",
+          "line": 27,
+          "classification": "non-runtime data-download utility"
+        },
+        {
+          "file": "model-training/steel_patchcore/download_v2.py",
+          "line": 36,
+          "classification": "non-runtime data-download utility"
+        }
+      ]
+    },
+    "dependency_vulnerabilities": {
+      "verdict": "PASS",
+      "backend_clean_environment_count": 0,
+      "qualified_host_runtime_count": 9,
+      "qualified_host_runtime_application_count": 0,
+      "qualified_host_runtime_tooling_packages": [
+        "pip",
+        "setuptools"
+      ],
+      "container_toolchain_fix": {
+        "pip": "26.1.2",
+        "setuptools": "83.0.0",
+        "pinned": true
+      }
+    },
+    "permissions": {
+      "verdict": "PASS",
+      "unsafe_git_modes": [],
+      "container_user": "d3review:d3review"
+    }
+  },
+  "verdict": "PASS",
+  "remaining_risks": [
+    "Two user-specific absolute paths remain in non-runtime dataset download utilities.",
+    "The qualified host venv contains vulnerable pip/setuptools tooling; the review container pins fixed versions and application dependencies have no known findings."
+  ],
+  "production_promotion": false,
+  "generated_at": "2026-08-21T07:33:47.296892Z"
+}

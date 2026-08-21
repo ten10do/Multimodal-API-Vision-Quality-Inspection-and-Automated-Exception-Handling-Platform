@@ -1,7 +1,7 @@
 {
   "schema_version": "steel_patchcore_d3_release_security_audit_v1",
   "scope": "git tracked and releasable untracked text files; datasets, runtime, lockfile and binaries excluded",
-  "files_scanned": 456,
+  "files_scanned": 469,
   "gitleaks": "NOT_INSTALLED",
   "checks": {
     "secrets": {
@@ -45,5 +45,5 @@
     "Two user-specific absolute paths remain in non-runtime dataset download utilities; they are excluded from release runtime execution."
   ],
   "production_promotion": false,
-  "generated_at": "2026-08-21T07:09:55.647679Z"
+  "generated_at": "2026-08-21T07:33:46.439647Z"
 }

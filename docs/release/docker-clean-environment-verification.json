@@ -1,0 +1,81 @@
+{
+  "schema_version": "steel_patchcore_d3_docker_clean_environment_v1",
+  "fresh_environment": true,
+  "docker_daemon": {
+    "verdict": "PASS",
+    "server": "29.6.2",
+    "operating_system": "Docker Desktop",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "architecture": "x86_64",
+    "nvidia_runtime_registered": true,
+    "hello_world": "PASS"
+  },
+  "docker_build": {
+    "verdict": "BLOCKED",
+    "dockerfile_check": "PASS",
+    "image": "d3-release-review:1.3.0",
+    "base": "pytorch/pytorch:2.11.0-cuda12.8-cudnn9-runtime",
+    "base_digest": "sha256:eee11b3b3872a8c838e35ef48f08b2d5def2080902c7f666831310ca1a0ef2be",
+    "base_manifest_verified": true,
+    "max_main_layer_download_bytes": 691587072,
+    "main_layer_total_bytes": 4101027701,
+    "failure_reason": "Docker Hub layer transfer repeatedly stalled and the final registry probe ended with TLS handshake timeout; no review image was produced."
+  },
+  "dependency_install": {
+    "host_clean_environment": "PASS",
+    "host_clean_environment_pip_audit_findings": 0,
+    "container": "NOT_RUN",
+    "container_toolchain_pins": {
+      "pip": "26.1.2",
+      "setuptools": "83.0.0",
+      "numpy": "2.2.6"
+    }
+  },
+  "environment_fingerprint": {
+    "host_os": "Windows-10-10.0.26100-SP0",
+    "host_python": "3.11.9",
+    "host_architecture": "AMD64",
+    "docker_server": "29.6.2",
+    "docker_kernel": "6.18.33.2-microsoft-standard-WSL2"
+  },
+  "runtime_fingerprint": {
+    "scope": "qualified host runtime; container runtime not reached",
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 5060",
+    "gpu_driver": "591.86",
+    "numpy": "2.4.6"
+  },
+  "release_manifest_sha256": "64e39e16f61c3f8b4fba64e420771f207f02a8e7f7c602cf76e25e915aaf66bf",
+  "release_manifest_payload_sha256": "15202db8a0095f0a1ac62e0063af1e7ce70a4fee7837457596121dcf4ba47ae0",
+  "artifact_hashes": {
+    "legacy_manifest": "c569a280b310b99f02dcff5ea7e68b4722ed40fba8072618abf83319b7618c15",
+    "weights": "0b8b82f85de91b424aded121c7e1dcc2b7bc6d0adeea651bf73a13307fad8c73",
+    "whitening": "c8d9d2ed39fb7ba6d0013a27beba81e8d7b70c66da0e38b7d19e15ea7cae8c3a",
+    "image_bank": "40fe43331885422c8a32364a48fc403b766f807f69faafee775a2eb2403cbbda",
+    "R-L1": "039ef32c44448686e938e3364e5cd96a25883c659d45f5c292c861f92e03f735",
+    "R-L2": "871e63da2886d8463d9dcff339a84420d58a33712f7cc913ea9a12aff934b5ab",
+    "protocol": "3b8f33e975fb79e2b2d624efcb5809e3449b98842a6bfa13109d20fcdc8f708a",
+    "investigation_results": "f37ba71e797aa1f79b5348fb2ae77c2fea7fdbec4962a0c3bad0270a4e434e50"
+  },
+  "artifact_loading": {
+    "qualified_host_runtime": "PASS",
+    "container": "NOT_RUN"
+  },
+  "gpu_inference": {
+    "qualified_host_runtime": "PASS",
+    "container": "NOT_RUN",
+    "image_id": "005da33cf",
+    "image_score": 0.808577299118042,
+    "threshold": 0.8471092581748962,
+    "heatmap_shape": [256, 1600],
+    "artifact_unchanged": true
+  },
+  "health_check": {
+    "dockerfile_definition": "PASS",
+    "container_runtime": "NOT_RUN"
+  },
+  "verdict": "BLOCKED",
+  "production_promotion": false
+}
