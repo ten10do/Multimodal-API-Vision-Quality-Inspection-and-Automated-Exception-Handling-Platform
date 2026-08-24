@@ -1,5 +1,8 @@
 # Industrial Vision AI Quality Inspection Platform
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+![Project Status](https://img.shields.io/badge/status-production--candidate--qualified-brightgreen)
+
 An engineering reference implementation of an industrial visual-inspection system: image acquisition, anomaly detection, pixel localization, fail-closed decisions, PLC/MES coordination, human review, edge runtime monitoring, drift detection, and model lifecycle governance.
 
 The repository focuses on system boundaries and verification evidence. The D3 model is a frozen release candidate; the field-device layer is simulator-backed and requires site acceptance before production use.
@@ -153,8 +156,9 @@ Primary evidence: [dual-branch report](docs/dual-branch-evaluation-report.md), [
 |---|---|
 | Architecture | [System](docs/architecture/system-architecture.md) · [Data flow](docs/architecture/data-flow.md) · [Deployment](docs/architecture/deployment-architecture.md) |
 | AI | [Anomaly detection](docs/ai/anomaly-detection.md) · [D3 adaptation](docs/ai/d3-domain-adaptation.md) · [Representation investigation](docs/ai/representation-investigation.md) |
-| Industrial engineering | [Camera](docs/industrial/camera-integration.md) · [PLC/MES](docs/industrial/plc-mes-loop.md) · [Edge](docs/industrial/edge-runtime.md) · [Drift](docs/industrial/drift-monitoring.md) |
+| Industrial engineering | [Camera](docs/industrial/camera-integration.md) · [Protocols](docs/industrial/protocol-adaptation.md) · [PLC/MES](docs/industrial/plc-mes-loop.md) · [Edge](docs/industrial/edge-runtime.md) · [Drift](docs/industrial/drift-monitoring.md) |
 | Operations | [Deployment](docs/operations/deployment-guide.md) · [SOP](docs/operations/operation-manual.md) · [Rollback](docs/operations/rollback-guide.md) |
+| Release showcase | [v1.0.0 notes](docs/release/v1.0.0-release-notes.md) · [Demo flow](docs/demo/demo-showcase.md) |
 | Design decisions | [DINOv2](docs/decisions/why-dinov2.md) · [ZCA](docs/decisions/why-zca.md) · [Dual branch](docs/decisions/why-dual-branch.md) · [Failed experiments](docs/decisions/failed-experiments.md) |
 | Technical interview trace | [Deep dive](docs/interview/technical-deep-dive.md) · [Architecture](docs/interview/architecture-questions.md) · [AI](docs/interview/ai-model-questions.md) · [Industrial](docs/interview/industrial-engineering-questions.md) |
 
@@ -195,6 +199,10 @@ For a service demo, start PostgreSQL with `docker compose up -d postgres`, then 
 - The model evidence covers one frozen steel dataset and one sealed recovery holdout.
 - Runtime artifacts and datasets are intentionally absent from Git.
 - ROI values in the business analysis are simulation assumptions, not financial claims.
-- This public repository currently has no declared software license; public visibility alone does not grant reuse rights.
+- The repository source is Apache-2.0 licensed; third-party dependencies, datasets, pretrained weights, and external artifacts retain their own terms.
 
 The [technical deep dive](docs/interview/technical-deep-dive.md) maps each major claim to code, tests, manifests, and evaluation evidence.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution and third-party scope notes.
