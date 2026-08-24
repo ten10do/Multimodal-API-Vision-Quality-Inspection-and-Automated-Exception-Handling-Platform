@@ -174,6 +174,7 @@ Primary evidence: [dual-branch report](docs/dual-branch-evaluation-report.md), [
 | Architecture | [System](docs/architecture/system-architecture.md) · [Data flow](docs/architecture/data-flow.md) · [Deployment](docs/architecture/deployment-architecture.md) |
 | AI | [Anomaly detection](docs/ai/anomaly-detection.md) · [D3 adaptation](docs/ai/d3-domain-adaptation.md) · [Representation investigation](docs/ai/representation-investigation.md) |
 | Industrial engineering | [Camera](docs/industrial/camera-integration.md) · [Protocols](docs/industrial/protocol-adaptation.md) · [PLC/MES](docs/industrial/plc-mes-loop.md) · [Edge](docs/industrial/edge-runtime.md) · [Drift](docs/industrial/drift-monitoring.md) |
+| Industrial integration | [Network topology](docs/industrial/integration/industrial-network-topology.md) · [Protocol adaptation guide](docs/industrial/integration/protocol-adaptation-guide.md) · [Factory integration guide](docs/industrial/integration/factory-integration-guide.md) |
 | Operations | [Deployment](docs/operations/deployment-guide.md) · [SOP](docs/operations/operation-manual.md) · [Rollback](docs/operations/rollback-guide.md) |
 | Release showcase | [v1.0.0 notes](docs/release/v1.0.0-release-notes.md) · [Demo flow](docs/demo/demo-showcase.md) |
 | Design decisions | [DINOv2](docs/decisions/why-dinov2.md) · [ZCA](docs/decisions/why-zca.md) · [Dual branch](docs/decisions/why-dual-branch.md) · [Failed experiments](docs/decisions/failed-experiments.md) |
