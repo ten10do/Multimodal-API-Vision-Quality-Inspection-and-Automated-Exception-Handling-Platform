@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -24,7 +25,7 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "datasets/severstal-steel/raw"
 IMG_DIR = RAW / "train_images"
-LISTING = Path(r"C:\Users\EDY\AppData\Local\Temp\kaggle_full.json")
+LISTING = Path(tempfile.gettempdir()) / "kaggle_full.json"
 PROGRESS = RAW / "download_progress.json"
 
 COMPETITION = "severstal-steel-defect-detection"

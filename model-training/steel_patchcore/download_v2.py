@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import random
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -33,7 +34,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "datasets/severstal-steel/raw"
 IMG_DIR = RAW / "train_images"
-LISTING = Path(r"C:\Users\EDY\AppData\Local\Temp\kaggle_full.json")
+LISTING = Path(tempfile.gettempdir()) / "kaggle_full.json"
 STATE = RAW / "download_state.json"
 QUARANTINE = RAW / "quarantine"
 
