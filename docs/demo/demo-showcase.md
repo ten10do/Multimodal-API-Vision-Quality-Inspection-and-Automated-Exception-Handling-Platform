@@ -2,6 +2,17 @@
 
 This showcase follows one inspection through the complete industrial quality loop. It can be used as a repository walkthrough with committed screenshots or as a deterministic simulator demonstration. The simulator path exercises orchestration and failure semantics without changing the frozen D3 model or artifacts.
 
+## Showcase Assets
+
+The reusable [demo asset index](assets/README.md) contains:
+
+- [system architecture](assets/system-architecture.md);
+- [AI inspection flow](assets/ai-inspection-flow.md);
+- [industrial closed loop](assets/industrial-closed-loop.md);
+- [dashboard screenshot guide](assets/dashboard-showcase.md).
+
+All screenshots are generated from the project dashboard with deterministic fixtures or simulator-backed services. They are not physical production-line images.
+
 ## End-to-End Flow
 
 ```mermaid

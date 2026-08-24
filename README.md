@@ -61,6 +61,23 @@ Detailed diagrams and trust boundaries:
 | Drift monitoring | PSI, cosine-distribution shift, and standardized embedding distance produce NORMAL / WARNING / CRITICAL states. |
 | MLOps lifecycle | DEVELOPMENT → VALIDATED → CANDIDATE → PRODUCTION → RETIRED with artifact, hash, metric, and rollback gates. |
 
+## Demo Showcase
+
+```mermaid
+flowchart LR
+    CAM["Camera"] --> AI["AI Inspection"]
+    AI --> DEC["Decision"]
+    DEC --> PLC["PLC"]
+    PLC --> MES["MES"]
+    MES --> REVIEW["Human Review"]
+```
+
+The diagram is the inspection narrative used for the portfolio walkthrough. At runtime, the decision engine drives PLC, MES, and review through separate idempotent adapters, and any invalid or unavailable dependency follows the fail-closed HOLD path.
+
+![Simulator-backed live inspection dashboard](docs/screenshots/final/02-live-inspection.png)
+
+This screenshot is from the repository's dashboard running deterministic demo data; it is not a physical production-line image. Explore the [complete demo](docs/demo/demo-showcase.md), [architecture and flow assets](docs/demo/assets/README.md), and [dashboard screenshot guide](docs/demo/assets/dashboard-showcase.md).
+
 ## AI Pipeline
 
 The first steel-domain PatchCore baseline used ImageNet WideResNet-50-2 features. It retained pixel-level signal but failed at image ranking: image AUROC was `0.4817`, the anomaly median was below the normal median, and threshold tuning could not repair the representation ordering.
