@@ -37,6 +37,7 @@ from .camera.virtual_file_camera import VirtualFileCamera, write_placeholder_png
 from .config import (
     FROZEN_THRESHOLD,
     MODEL_VERSION,
+    PROJECT_ROOT,
     RELEASE_ID,
     RUNTIME_ROOT,
     DecisionPolicy,
@@ -47,6 +48,7 @@ from .events import Decision, OperatorStatus, PlcStatus, utc_now_iso
 from .human_review import HumanReviewWorkflow, ReviewOutcome
 from .mes_service import MesService
 from .plc_adapter import InMemoryPlc, PlcCommand, PlcTraceLog, plc_status_for
+from model_governance import ModelLifecycleManager
 
 DEFAULT_PRODUCTS = 1000
 DEFECT_RATE = 0.08
@@ -223,7 +225,11 @@ class FactorySimulator:
         self.mes = MesService()
         self.review = HumanReviewWorkflow(mes=self.mes)
         self.store = LoopStore(plc=self.plc, mes=self.mes, review=self.review)
-        self.app = create_app(self.store)
+        self.lifecycle = ModelLifecycleManager(
+            PROJECT_ROOT / "model_governance/model_history.json",
+            project_root=PROJECT_ROOT,
+        )
+        self.app = create_app(self.store, lifecycle_manager=self.lifecycle)
         self.operator_rng = np.random.default_rng(seed + 1)
         # acquisition layer (Phase 6): camera -> frame -> D3
         self.camera = VirtualFileCamera(

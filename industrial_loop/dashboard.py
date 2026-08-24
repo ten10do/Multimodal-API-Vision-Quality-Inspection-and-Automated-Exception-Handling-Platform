@@ -129,6 +129,7 @@ def create_app(
     store: LoopStore,
     runtime_manager=None,  # noqa: ANN001 - industrial_runtime.EdgeRuntimeManager, optional
     drift_detector=None,  # noqa: ANN001 - monitoring.drift.DriftDetector, optional
+    lifecycle_manager=None,  # noqa: ANN001 - model_governance.ModelLifecycleManager, optional
 ) -> FastAPI:
     app = FastAPI(title="IndustrialVision-QC Closed-Loop Dashboard", version="1.0.0")
 
@@ -203,8 +204,34 @@ def create_app(
             return []
         return [r.as_dict() for r in drift_detector.history()]
 
+    @app.get("/api/operations")
+    async def api_operations() -> dict:
+        if lifecycle_manager is None:
+            return {
+                "available": False,
+                "current_model_version": None,
+                "lifecycle_state": None,
+                "artifact_hash": None,
+                "rollback_status": None,
+            }
+        return lifecycle_manager.operations_snapshot()
+
+    @app.get("/api/model")
+    async def api_model() -> dict:
+        if lifecycle_manager is None:
+            return {"available": False, "versions": [], "history": []}
+        return lifecycle_manager.model_snapshot()
+
     @app.get("/", response_class=HTMLResponse)
     async def index() -> str:
+        return _PAGE
+
+    @app.get("/operations", response_class=HTMLResponse)
+    async def operations_page() -> str:
+        return _PAGE
+
+    @app.get("/model", response_class=HTMLResponse)
+    async def model_page() -> str:
         return _PAGE
 
     return app
@@ -252,6 +279,8 @@ _PAGE = """<!DOCTYPE html>
     <a href="#/" data-page="live">Live</a>
     <a href="#/runtime" data-page="runtime">Runtime</a>
     <a href="#/drift" data-page="drift">Drift</a>
+    <a href="#/operations" data-page="operations">Operations</a>
+    <a href="#/model" data-page="model">Model</a>
   </nav>
   <span class="pill" id="plc-state">PLC ?</span>
   <span class="pill" id="updated">—</span>
@@ -306,6 +335,21 @@ _PAGE = """<!DOCTYPE html>
     <section><h2>Thresholds (config-driven)</h2><div class="mono" id="dr-thresholds">—</div></section>
     <section><h2>Evaluation history</h2>
       <table id="dr-history"><thead><tr><th>time</th><th>state</th><th>psi mean</th><th>psi max</th><th>cosine</th><th>dist</th><th>alerts</th></tr></thead><tbody></tbody></table>
+    </section>
+  </div>
+
+  <div id="page-operations" style="display:none">
+    <div class="cards">
+      <div class="card total"><h2>Current model</h2><div class="v" id="op-version">—</div></div>
+      <div class="card"><h2>Lifecycle state</h2><div class="v" id="op-state">—</div></div>
+      <div class="card"><h2>Rollback status</h2><div class="v" id="op-rollback">—</div></div>
+    </div>
+    <section><h2>Immutable artifact hash</h2><div class="mono" id="op-hash">—</div></section>
+  </div>
+
+  <div id="page-model" style="display:none">
+    <section><h2>Version history and approvals</h2>
+      <table id="model-versions"><thead><tr><th>version</th><th>state</th><th>approval</th><th>metrics</th><th>artifact hash</th><th>timestamp</th></tr></thead><tbody></tbody></table>
     </section>
   </div>
 </main>
@@ -413,19 +457,42 @@ async function refreshDrift(){
       <td class="mono">${(r.alerts||[]).join("; ").slice(0,50)||"—"}</td></tr>`).join("");
   }catch(err){ console.error(err); }
 }
+async function refreshOperations(){
+  try{
+    const op = await (await fetch("/api/operations")).json();
+    $("op-version").textContent = op.current_model_version || "n/a";
+    $("op-state").textContent = op.lifecycle_state || "n/a";
+    $("op-hash").textContent = op.artifact_hash || "n/a";
+    $("op-rollback").textContent = op.rollback_status ? op.rollback_status.status : "NOT EXECUTED";
+  }catch(err){ console.error(err); }
+}
+async function refreshModel(){
+  try{
+    const data = await (await fetch("/api/model")).json();
+    $("model-versions").tBodies[0].innerHTML = (data.versions || []).map(row=>`<tr>
+      <td class="mono">${row.model_version}</td><td>${row.state}</td>
+      <td>${row.approval_status}</td><td class="mono">${JSON.stringify(row.metrics)}</td>
+      <td class="mono">${row.artifact_hash}</td><td class="mono">${row.timestamp}</td></tr>`).join("");
+  }catch(err){ console.error(err); }
+}
 function route(){
-  const page = (location.hash || "#/").replace("#/","") || "live";
-  for(const id of ["live","runtime","drift"]){
+  let page = (location.hash || "").replace("#/","");
+  if(!page) page = location.pathname === "/operations" ? "operations" : location.pathname === "/model" ? "model" : "live";
+  for(const id of ["live","runtime","drift","operations","model"]){
     document.getElementById("page-"+id).style.display = id===page ? "" : "none";
   }
   if(page==="runtime") refreshRuntime();
   if(page==="drift") refreshDrift();
+  if(page==="operations") refreshOperations();
+  if(page==="model") refreshModel();
 }
 window.addEventListener("hashchange", route);
 route();
 refresh(); setInterval(refresh, 2000);
 setInterval(()=>{ if((location.hash||"#/")==="#/runtime") refreshRuntime();
-                  if(location.hash==="#/drift") refreshDrift(); }, 3000);
+                  if(location.hash==="#/drift") refreshDrift();
+                  if(location.hash==="#/operations" || location.pathname==="/operations") refreshOperations();
+                  if(location.hash==="#/model" || location.pathname==="/model") refreshModel(); }, 3000);
 </script>
 </body>
 </html>"""

@@ -1,0 +1,21 @@
+{
+  "schema_version": "industrial_model_history_v1",
+  "records": [
+    {
+      "timestamp": "2026-08-21T07:02:20.257303Z",
+      "model_version": "1.3.0",
+      "artifact_path": "model-training/registry/steel-patchcore-d3-candidate/1.3.0-candidate.1/manifest.json",
+      "artifact_hash": "284e7e7c6aa57158088e833b10c3f3c8c3156d94149323eaf50d87343028d909",
+      "metrics": {
+        "image_auroc": 0.8179071714278028,
+        "pixel_auroc": 0.9241393857425543,
+        "aupro": 0.7993981069909584
+      },
+      "state": "CANDIDATE",
+      "transition": "VALIDATED -> CANDIDATE",
+      "operator": "release-qualification",
+      "approval_status": "CANDIDATE_APPROVED"
+    }
+  ],
+  "rollback_status": null
+}
