@@ -178,6 +178,7 @@ Primary evidence: [dual-branch report](docs/dual-branch-evaluation-report.md), [
 | Operations | [Deployment](docs/operations/deployment-guide.md) · [SOP](docs/operations/operation-manual.md) · [Rollback](docs/operations/rollback-guide.md) |
 | Release showcase | [v1.0.0 notes](docs/release/v1.0.0-release-notes.md) · [Demo flow](docs/demo/demo-showcase.md) |
 | Design decisions | [DINOv2](docs/decisions/why-dinov2.md) · [ZCA](docs/decisions/why-zca.md) · [Dual branch](docs/decisions/why-dual-branch.md) · [Failed experiments](docs/decisions/failed-experiments.md) |
+| Engineering decisions | [Failure analysis](docs/engineering-decisions/failure-analysis.md) · [Architecture decisions](docs/engineering-decisions/architecture-decisions.md) · [Model rationale](docs/engineering-decisions/model-selection-rationale.md) · [Trade-offs](docs/engineering-decisions/trade-offs.md) |
 | Technical interview trace | [Deep dive](docs/interview/technical-deep-dive.md) · [Architecture](docs/interview/architecture-questions.md) · [AI](docs/interview/ai-model-questions.md) · [Industrial](docs/interview/industrial-engineering-questions.md) |
 
 ## Repository Map
