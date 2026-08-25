@@ -1,0 +1,32 @@
+name: Documentation improvement
+description: Report an unclear, stale, or broken documentation claim.
+title: "[Docs]: "
+labels: [documentation]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Document location
+      description: File path, section, or URL.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is unclear or incorrect?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Suggested correction
+      description: Link existing project evidence when the change affects a metric or capability claim.
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Evidence boundary
+      options:
+        - label: The suggestion does not present simulation as a physical factory deployment.
+          required: true
+        - label: No confidential data or restricted artifact is included.
+          required: true

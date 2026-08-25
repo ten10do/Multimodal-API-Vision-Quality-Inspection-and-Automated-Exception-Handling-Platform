@@ -1,0 +1,73 @@
+name: Bug report
+description: Report a reproducible software or documentation defect.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not report vulnerabilities or include credentials, proprietary images, model artifacts, or plant details here. Use the private security process instead.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Documentation
+        - Backend API
+        - Frontend dashboard
+        - Inference contract
+        - Camera / PLC / MES adapter
+        - Edge runtime
+        - Monitoring / drift
+        - Model governance
+        - CI / packaging
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: Describe the observed behavior and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide minimal, deterministic steps and sanitized inputs.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Revision, OS, Python/Node version, deployment mode, and relevant configuration without secrets.
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence
+    attributes:
+      label: Evidence boundary
+      options:
+        - Implemented capability
+        - Simulation
+        - Future deployment / integration
+        - Not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checklist
+      options:
+        - label: I removed secrets, proprietary data, model artifacts, and identifying plant information.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

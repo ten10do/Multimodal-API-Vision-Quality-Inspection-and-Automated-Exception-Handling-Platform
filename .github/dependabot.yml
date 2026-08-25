@@ -1,0 +1,64 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pip
+    directory: /inference-service
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pip
+    directory: /model-training
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pip
+    directory: /packages/vision-contract
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /docker/edge-runtime
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
