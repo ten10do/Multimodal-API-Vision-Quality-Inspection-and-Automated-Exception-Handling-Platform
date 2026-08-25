@@ -1,7 +1,7 @@
 # Backend runtime (frozen 2026-08-04)
 fastapi==0.141.1
 uvicorn[standard]==0.52.1
-sqlalchemy[asyncio]==2.0.51
+sqlalchemy[asyncio]==2.0.52
 asyncpg==0.31.0
 alembic==1.18.5
 httpx==0.28.1
