@@ -34,7 +34,7 @@ jobs:
       - name: Validate Markdown and extract Mermaid diagrams
         run: python scripts/check_docs.py --extract-mermaid .docs-check/mermaid
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
