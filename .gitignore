@@ -54,6 +54,7 @@ storage-images/
 
 # Frontend build output
 frontend/dist/
+.docs-check/
 
 # Broken or transient node_modules trees (left over from corrupted installs)
 frontend/node_modules.broken/

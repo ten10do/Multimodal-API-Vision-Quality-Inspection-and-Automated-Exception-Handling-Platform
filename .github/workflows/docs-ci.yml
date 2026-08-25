@@ -1,0 +1,74 @@
+name: docs-ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths:
+      - "**/*.md"
+      - "scripts/check_docs.py"
+      - ".github/workflows/docs-ci.yml"
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "scripts/check_docs.py"
+      - ".github/workflows/docs-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: links, Markdown, and Mermaid
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Markdown and extract Mermaid diagrams
+        run: python scripts/check_docs.py --extract-mermaid .docs-check/mermaid
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned Mermaid CLI without bundled browser
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: >-
+          npm install --prefix .docs-check/cli --no-save --no-package-lock
+          --no-audit --no-fund @mermaid-js/mermaid-cli@11.16.0
+
+      - name: Parse and render Mermaid diagrams
+        shell: bash
+        run: |
+          chrome="$(command -v google-chrome || command -v chromium-browser || command -v chromium || true)"
+          if [[ -z "$chrome" ]]; then
+            echo "A system Chrome/Chromium executable is required for Mermaid validation." >&2
+            exit 1
+          fi
+          python - "$chrome" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          Path(".docs-check/puppeteer-config.json").write_text(
+              json.dumps({"executablePath": sys.argv[1], "args": ["--no-sandbox"]}),
+              encoding="utf-8",
+          )
+          PY
+          mkdir -p .docs-check/rendered
+          for diagram in .docs-check/mermaid/*.mmd; do
+            output=".docs-check/rendered/$(basename "${diagram%.mmd}").svg"
+            .docs-check/cli/node_modules/.bin/mmdc \
+              --quiet \
+              --puppeteerConfigFile .docs-check/puppeteer-config.json \
+              --input "$diagram" \
+              --output "$output"
+          done
