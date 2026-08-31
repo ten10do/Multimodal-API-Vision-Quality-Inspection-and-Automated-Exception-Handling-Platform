@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -9,6 +10,26 @@ from pathlib import Path
 # real simulators on 8501/8502).
 os.environ.setdefault("IVQC_PLC_ENABLED", "false")
 os.environ.setdefault("IVQC_MES_ENABLED", "false")
+
+# Governance credentials for the test suite. Configured here, before app
+# import, because the settings object is cached on first use. Without them the
+# model registry is closed, which is the production default.
+os.environ.setdefault("IVQC_PIPELINE_HMAC_SECRET", "test-pipeline-secret")
+os.environ.setdefault("IVQC_RUNTIME_ENV_FILE", "backend/tests/.env.runtime.test")
+os.environ.setdefault(
+    "IVQC_API_TOKENS",
+    json.dumps(
+        {
+            "test-viewer-token": {"subject": "tester-viewer", "roles": ["viewer"]},
+            "test-engineer-token": {"subject": "tester-engineer", "roles": ["engineer"]},
+            "test-pipeline-token": {"subject": "tester-pipeline", "roles": ["pipeline"]},
+            "test-approver-token": {"subject": "tester-approver", "roles": ["approver"]},
+            "test-admin-token": {"subject": "tester-admin", "roles": ["admin"]},
+        }
+    ),
+)
+
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -49,6 +70,60 @@ async def client(app, db_session):
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+TEST_TOKENS = {
+    "viewer": "test-viewer-token",
+    "engineer": "test-engineer-token",
+    "pipeline": "test-pipeline-token",
+    "approver": "test-approver-token",
+    "admin": "test-admin-token",
+}
+
+ARTIFACT_URI = "inference-service/models/best.pt"
+
+
+@pytest.fixture
+def auth():
+    """Bearer headers for a role: auth("approver") -> {"Authorization": ...}."""
+
+    def _headers(role: str = "admin") -> dict:
+        return {"Authorization": f"Bearer {TEST_TOKENS[role]}"}
+
+    return _headers
+
+
+@pytest.fixture(scope="session")
+def artifact():
+    """A real artifact plus the SHA256 the server will recompute for it."""
+    import hashlib
+
+    path = Path(__file__).resolve().parents[2] / ARTIFACT_URI
+    assert path.is_file(), f"test artifact missing: {path}"
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return {"uri": ARTIFACT_URI, "sha256": h.hexdigest()}
+
+
+@pytest.fixture
+def eval_report(tmp_path):
+    """An eval report the domain-validation claim can point at. Lives under
+    the project root so the server can resolve and re-hash it."""
+    import hashlib
+    import json as _json
+
+    target = Path(__file__).resolve().parents[1] / ".artifacts"
+    target.mkdir(exist_ok=True)
+    file = target / f"eval-report-{uuid4().hex[:10]}.json"
+    file.write_text(_json.dumps({"domain": "steel", "sample_count": 42}), encoding="utf-8")
+    digest = hashlib.sha256(file.read_bytes()).hexdigest()
+    rel = file.relative_to(Path(__file__).resolve().parents[2]).as_posix()
+    try:
+        yield {"uri": rel, "sha256": digest}
+    finally:
+        file.unlink(missing_ok=True)
 
 
 @pytest.fixture

@@ -268,6 +268,11 @@ class ModelRegistry(TimestampMixin, Base):
     status lifecycle: CANDIDATE -> STAGING -> PRODUCTION -> ARCHIVED.
     At most one PRODUCTION row per model_name is enforced in the DB by a
     partial unique index (status='PRODUCTION').
+
+    Provenance columns (governance hardening): metrics, domain_validated and
+    artifact_sha256 are privileged facts. They are only ever written through
+    the signed trusted-pipeline attestation path, and each carries a
+    server-computed verification flag that the promotion gate enforces.
     """
 
     __tablename__ = "model_registry"
@@ -285,6 +290,56 @@ class ModelRegistry(TimestampMixin, Base):
     promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     domain_validated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     notes: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    # ---- provenance (attested by the trusted pipeline, verified server-side) ----
+    attested_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    attested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    attestation_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    artifact_hash_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    domain_evidence: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    domain_evidence_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # ---- human approval ----
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approval_reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    # ---- runtime activation (registry -> deployment manifest) ----
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    activation_target: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+
+class ModelRegistryAudit(TimestampMixin, Base):
+    """Append-only governance journal.
+
+    Every mutation and every *denied* attempt lands here. Rows are never
+    updated or deleted through the API: promotion, rollback, archive and
+    activation each append one record before and one after the transition.
+    """
+
+    __tablename__ = "model_registry_audit"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    registry_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("model_registry.id"), nullable=True)
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    model_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    action: Mapped[str] = mapped_column(String(32), nullable=False)  # register|attest|promote|rollback|archive|activate
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)  # APPLIED|DENIED|ERROR
+    from_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    to_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    actor_roles: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    gate: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+Index("ix_model_registry_audit_registry", ModelRegistryAudit.__table__.c.registry_id)
+Index("ix_model_registry_audit_created", ModelRegistryAudit.__table__.c.created_at)
 
 
 class DatasetVersion(TimestampMixin, Base):
