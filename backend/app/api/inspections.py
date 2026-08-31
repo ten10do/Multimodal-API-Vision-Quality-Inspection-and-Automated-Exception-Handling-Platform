@@ -4,7 +4,7 @@ import logging
 import time
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,6 +34,7 @@ def get_inspection_service() -> InspectionService:
 
 @router.post("/inspections", response_model=InspectionDetail, status_code=201)
 async def create_inspection(
+    request: Request,
     file: UploadFile = File(...),
     product_id: str = Form(...),
     batch_id: str | None = Form(default=None),
@@ -51,6 +52,7 @@ async def create_inspection(
             CreateInspectionInput(
                 image_bytes=data,
                 filename=file.filename or "image.jpg",
+                media_type=request.headers.get("content-type", "application/octet-stream"),
                 product_id=product_id,
                 batch_id=batch_id,
                 production_line=production_line,

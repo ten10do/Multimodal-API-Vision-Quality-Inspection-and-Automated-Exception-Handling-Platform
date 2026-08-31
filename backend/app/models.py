@@ -73,6 +73,11 @@ class Inspection(TimestampMixin, Base):
     inference_latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
     inference_request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     image_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # P0 traceability: the stored artifact's real URI, content digest and
+    # detected media type. image_path must never hold the upload filename;
+    # it points at bytes that actually exist on disk.
+    image_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    image_media_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
     error_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # ---- Phase 8 MLOps: deployment traceability (8D) ----

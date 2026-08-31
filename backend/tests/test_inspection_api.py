@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -217,3 +218,60 @@ async def test_db_rollback_on_commit_failure(client, db_session, stub_infer, mon
     assert resp.json()["error"]["code"] == "db_write_failed"
     assert await count_inspections(db_session) == 0
     monkeypatch.setattr(db_session, "commit", original_commit)
+
+
+async def test_storage_failure_fails_closed(client, db_session, stub_infer, monkeypatch):
+    """P0: a failed raw-image write must halt the inspection. The row lands in
+    FAILED with no quality verdict, no image provenance, and the API answers
+    500 image_storage_failed (never PASS/RELEASE)."""
+    stub_infer(StubInference(result=contract()))
+
+    def disk_full(inspection_id: str, data: bytes):
+        raise OSError("disk full")
+
+    from app.storage import get_storage
+
+    monkeypatch.setattr(get_storage(), "save", disk_full)
+    resp = await client.post(
+        "/api/v1/inspections",
+        files={"file": ("clean.png", SAMPLE_JPG, "image/png")},
+        data={"product_id": "NEU-0011"},
+    )
+    assert resp.status_code == 500
+    assert resp.json()["error"]["code"] == "image_storage_failed"
+
+    row = (await db_session.execute(select(Inspection))).scalar_one()
+    assert row.status.value == "failed"
+    assert "image storage failed" in row.error_message
+    # fail-closed: no quality verdict, no release, no provenance to point at
+    assert row.quality_result is None
+    assert row.final_quality_result is None
+    assert row.image_path is None
+    assert row.image_sha256 is None
+    assert row.image_media_type is None
+
+
+async def test_success_path_records_real_artifact_metadata(client, db_session, stub_infer):
+    """P0: image_path must be the real stored URI (never the upload filename),
+    and the sha256/media_type are server-side detected, not client-claimed."""
+    stub_infer(StubInference(result=contract()))
+    resp = await client.post(
+        "/api/v1/inspections",
+        files={"file": ("clean.png", SAMPLE_JPG, "image/png")},
+        data={"product_id": "NEU-0012"},
+    )
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+
+    expected_digest = hashlib.sha256(SAMPLE_JPG).hexdigest()
+    # magic bytes 0xffd8ff -> jpeg even though the client claimed image/png
+    assert body["image_sha256"] == expected_digest
+    assert body["image_media_type"] == "image/jpeg"
+
+    row = (await db_session.execute(select(Inspection))).scalar_one()
+    assert row.image_sha256 == expected_digest
+    assert row.image_media_type == "image/jpeg"
+    assert row.image_path is not None
+    assert not row.image_path.endswith("clean.png")
+    target = Path(row.image_path) if Path(row.image_path).is_absolute() else PROJECT_ROOT / row.image_path
+    assert target.is_file(), f"recorded image URI does not exist on disk: {row.image_path}"
