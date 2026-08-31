@@ -185,3 +185,49 @@ async def test_release_manager_can_write_quality_rules(client, auth):
         json={"defect_type": "crazing", "action": "REVIEW", "severity": "medium"},
     )
     assert r.status_code == 201
+
+
+# --- fail-closed guard: every business HTTP route must carry an auth dependency ---
+
+
+@pytest.mark.asyncio
+async def test_all_business_http_routes_require_auth(app):
+    """No business HTTP route may exist without an auth dependency. A future
+    route added without `require_roles` / `require_any_authenticated` fails
+    here, so exposure cannot regress silently. Infra endpoints (/health,
+    /ready, /docs, /openapi) are public by design; the WebSocket route is
+    authenticated in its handler via ?token= (browsers cannot attach an
+    Authorization header to a WS handshake)."""
+    def calls_in(node, out):
+        c = getattr(node, "call", None)
+        if c is not None:
+            out.append(c)
+        for d in getattr(node, "dependencies", []) or []:
+            calls_in(d, out)
+
+    def iter_routes(container):
+        for r in container:
+            if type(r).__name__ == "_IncludedRouter":
+                yield from iter_routes(r.original_router.routes)
+            else:
+                yield r
+
+    public_prefixes = ("/health", "/ready", "/docs", "/redoc", "/openapi.json", "/api/v1/ws/")
+    missing: list[tuple[str, list[str]]] = []
+    for r in iter_routes(app.routes):
+        path = getattr(r, "path", "?")
+        if path.startswith(public_prefixes):
+            continue
+        if not getattr(r, "methods", None):  # WebSocketRoute: handler-level auth
+            continue
+        calls: list = []
+        for d in getattr(r, "dependencies", []) or []:
+            calls_in(d, calls)
+        calls_in(getattr(r, "dependant", None), calls)
+        authed = any(
+            c.__qualname__.startswith("require_roles") or "require_any_authenticated" in c.__qualname__
+            for c in calls
+        )
+        if not authed:
+            missing.append((path, sorted(getattr(r, "methods"))))
+    assert missing == [], f"unprotected business routes: {missing}"
