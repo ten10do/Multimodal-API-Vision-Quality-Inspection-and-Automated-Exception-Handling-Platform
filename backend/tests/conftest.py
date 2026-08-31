@@ -25,6 +25,10 @@ os.environ.setdefault(
             "test-pipeline-token": {"subject": "tester-pipeline", "roles": ["pipeline"]},
             "test-approver-token": {"subject": "tester-approver", "roles": ["approver"]},
             "test-admin-token": {"subject": "tester-admin", "roles": ["admin"]},
+            "test-operator-token": {"subject": "tester-operator", "roles": ["operator"]},
+            "test-reviewer-a-token": {"subject": "tester-reviewer-a", "roles": ["reviewer"]},
+            "test-reviewer-b-token": {"subject": "tester-reviewer-b", "roles": ["reviewer"]},
+            "test-release-manager-token": {"subject": "tester-release-manager", "roles": ["release-manager"]},
         }
     ),
 )
@@ -63,6 +67,24 @@ async def app():
 
 @pytest_asyncio.fixture
 async def client(app, db_session):
+    """Authenticated client. Carries the operator bearer token by default so
+    shop-floor business tests run as a logged-in operator; tests that need a
+    different role (reviewer / pipeline / release-manager / admin) pass
+    explicit headers. Use `client_unauthenticated` (or drop the header) for
+    fail-closed assertions."""
+    async def override_get_session():
+        yield db_session
+
+    app.dependency_overrides[get_session] = override_get_session
+    transport = httpx.ASGITransport(app=app)
+    headers = {"Authorization": f"Bearer {TEST_TOKENS['operator']}"}
+    async with httpx.AsyncClient(transport=transport, base_url="http://test", headers=headers) as ac:
+        yield ac
+
+
+@pytest_asyncio.fixture
+async def client_unauthenticated(app, db_session):
+    """No Authorization header: every protected endpoint must answer 401."""
     async def override_get_session():
         yield db_session
 
@@ -78,6 +100,10 @@ TEST_TOKENS = {
     "pipeline": "test-pipeline-token",
     "approver": "test-approver-token",
     "admin": "test-admin-token",
+    "operator": "test-operator-token",
+    "reviewer_a": "test-reviewer-a-token",
+    "reviewer_b": "test-reviewer-b-token",
+    "release-manager": "test-release-manager-token",
 }
 
 ARTIFACT_URI = "inference-service/models/best.pt"

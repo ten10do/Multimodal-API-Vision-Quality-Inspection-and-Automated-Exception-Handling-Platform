@@ -358,3 +358,31 @@ class DatasetVersion(TimestampMixin, Base):
     manifest_uri: Mapped[str | None] = mapped_column(String(512), nullable=True)
     sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     description: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+
+class AuditLog(TimestampMixin, Base):
+    """Business operation audit journal (unified, append-only by convention).
+
+    Every protected business mutation records who (authenticated principal),
+    what (action + resource), the outcome (applied | denied) and the request
+    id. Rows are never updated or deleted through the API; the journal answers
+    "who did what when" across inspections / review / quality rules / telemetry
+    without tying itself to the model-registry lifecycle table.
+    """
+
+    __tablename__ = "audit_log"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    result: Mapped[str] = mapped_column(String(16), nullable=False)  # applied | denied
+    actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    actor_roles: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    resource_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    resource_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    detail: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+Index("ix_audit_log_created", AuditLog.__table__.c.created_at)
+Index("ix_audit_log_actor", AuditLog.__table__.c.actor)
+Index("ix_audit_log_resource", AuditLog.__table__.c.resource_type)

@@ -115,8 +115,8 @@ async def test_register_rejects_privileged_fields(client, db_session, auth):
     assert r.status_code == 422, r.text  # extra="forbid", not silent acceptance
 
 
-async def test_register_requires_authentication(client, db_session):
-    r = await client.post(
+async def test_register_requires_authentication(client_unauthenticated, db_session):
+    r = await client_unauthenticated.post(
         "/api/v1/models",
         json={"model_name": MODEL, "model_version": "1.0.0", "model_type": "yolo",
               "artifact_uri": "inference-service/models/best.pt"},
@@ -277,10 +277,10 @@ async def test_promote_rejects_caller_supplied_zero_thresholds(client, db_sessio
 # ---- 3. authentication and approval on lifecycle operations ----
 
 
-async def test_promote_requires_authentication(client, db_session, auth, artifact, eval_report):
-    entry = await _identity(client, auth, "1.0.0")
-    await _attest(client, auth, entry, artifact, eval_report)
-    r = await client.post(
+async def test_promote_requires_authentication(client_unauthenticated, db_session, auth, artifact, eval_report):
+    entry = await _identity(client_unauthenticated, auth, "1.0.0")
+    await _attest(client_unauthenticated, auth, entry, artifact, eval_report)
+    r = await client_unauthenticated.post(
         f"/api/v1/models/{entry['id']}/promote",
         json={"required_domain": "steel", "approved_by": "qa-manager", "reason": "no token"},
     )
@@ -444,8 +444,8 @@ async def test_runtime_sync_is_observable_and_never_fakes_sync(client, db_sessio
         assert body["overall"] != "IN_SYNC"  # no probe, no claim of sync
 
 
-async def test_runtime_sync_requires_authentication(client, db_session):
-    r = await client.get("/api/v1/models/runtime-sync")
+async def test_runtime_sync_requires_authentication(client_unauthenticated, db_session):
+    r = await client_unauthenticated.get("/api/v1/models/runtime-sync")
     assert r.status_code == 401
 
 

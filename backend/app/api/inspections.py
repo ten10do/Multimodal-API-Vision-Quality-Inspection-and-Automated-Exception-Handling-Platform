@@ -17,6 +17,8 @@ from ..models import Inspection
 from ..schemas import InspectionDetail
 from ..services.contract_validation import InvalidImageError
 from ..services.inspection_service import CreateInspectionInput, InspectionService, InspectionServiceError
+from ..security.auth import ROLE_ADMIN, ROLE_OPERATOR, Principal, require_any_authenticated, require_roles
+from ..services.audit_service import record as audit_record
 from ..storage import get_storage
 from ..ws import schedule_broadcast
 from .serializers import to_inspection_detail
@@ -43,6 +45,7 @@ async def create_inspection(
     idempotency_key: str | None = Form(default=None),
     session: AsyncSession = Depends(get_session),
     service: InspectionService = Depends(get_inspection_service),
+    actor: Principal = Depends(require_roles(ROLE_OPERATOR, ROLE_ADMIN)),
 ) -> InspectionDetail:
     started = time.perf_counter()
     data = await file.read()
@@ -69,6 +72,12 @@ async def create_inspection(
         if exc.inspection_id:
             failed = await _load_detail(session, exc.inspection_id)
             if failed is not None:
+                audit_record(
+                    session, action="inspection.create", actor=actor, result="denied",
+                    resource_type="inspection", resource_id=exc.inspection_id,
+                    detail={"code": exc.code, "message": exc.message},
+                    request_id=request.headers.get("X-Request-ID"),
+                )
                 event = _build_event(failed, event_type="inspection.failed", error=exc.message)
                 schedule_broadcast(event.to_broadcast())
                 # Phase 7 fail-safe: a processing failure NEVER releases;
@@ -115,11 +124,17 @@ async def create_inspection(
         final_quality_result=initial_result,
         process_status="completed",
     )
+    audit_record(
+        session, action="inspection.create", actor=actor, result="applied",
+        resource_type="inspection", resource_id=inspection.inspection_id,
+        detail={"quality_result": eager.quality_result.value if eager.quality_result else None},
+        request_id=request.headers.get("X-Request-ID"),
+    )
     await session.commit()
     return detail
 
 
-@router.get("/inspections", response_model=list[InspectionDetail])
+@router.get("/inspections", response_model=list[InspectionDetail], dependencies=[Depends(require_any_authenticated())])
 async def list_inspections(
     product_id: str | None = None,
     inspection_id: str | None = None,
@@ -172,7 +187,7 @@ async def list_inspections(
     return [to_inspection_detail(i) for i in result.scalars()]
 
 
-@router.get("/inspections/{inspection_id}", response_model=InspectionDetail)
+@router.get("/inspections/{inspection_id}", response_model=InspectionDetail, dependencies=[Depends(require_any_authenticated())])
 async def get_inspection(inspection_id: str, session: AsyncSession = Depends(get_session)) -> InspectionDetail:
     inspection = await _load_detail(session, inspection_id)
     if inspection is None:
@@ -180,7 +195,7 @@ async def get_inspection(inspection_id: str, session: AsyncSession = Depends(get
     return to_inspection_detail(inspection)
 
 
-@router.get("/inspections/{inspection_id}/image")
+@router.get("/inspections/{inspection_id}/image", dependencies=[Depends(require_any_authenticated())])
 async def get_inspection_image(inspection_id: str, session: AsyncSession = Depends(get_session)) -> FileResponse:
     """Serve the raw captured image for an inspection (4D). The dashboard
     draws Bounding Boxes from the Vision Contract; no server-side annotation."""
@@ -193,7 +208,7 @@ async def get_inspection_image(inspection_id: str, session: AsyncSession = Depen
     return FileResponse(path, media_type="image/jpeg")
 
 
-@router.get("/inspections/{inspection_id}/anomaly-map")
+@router.get("/inspections/{inspection_id}/anomaly-map", dependencies=[Depends(require_any_authenticated())])
 async def get_anomaly_map(inspection_id: str, session: AsyncSession = Depends(get_session)) -> Response:
     """Phase 6 (6G): serve the PatchCore heatmap PNG for a REVIEW inspection."""
     inspection = await _load_detail(session, inspection_id)

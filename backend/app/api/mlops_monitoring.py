@@ -35,6 +35,7 @@ from ..mlops.drift import (
     review_rate_delta,
 )
 from ..models import Inspection, ReviewDecision, ReviewTask
+from ..security.auth import require_any_authenticated
 
 router = APIRouter(prefix="/api/v1", tags=["mlops"])
 
@@ -74,7 +75,7 @@ def _bins(values: list[float], n: int = 10, lo: float = 0.0, hi: float = 1.0) ->
     return out
 
 
-@router.get("/model-metrics")
+@router.get("/model-metrics", dependencies=[Depends(require_any_authenticated())])
 async def model_metrics(
     model_version: str | None = None,
     time_from: str | None = None,
@@ -115,7 +116,7 @@ async def model_metrics(
     }
 
 
-@router.get("/human-feedback")
+@router.get("/human-feedback", dependencies=[Depends(require_any_authenticated())])
 async def human_feedback(
     model_version: str | None = None,
     defect_type: str | None = None,
@@ -218,7 +219,7 @@ async def human_feedback(
     }
 
 
-@router.get("/drift")
+@router.get("/drift", dependencies=[Depends(require_any_authenticated())])
 async def drift(
     model_version: str | None = None,
     baseline_days: int = Query(default=7, ge=1),

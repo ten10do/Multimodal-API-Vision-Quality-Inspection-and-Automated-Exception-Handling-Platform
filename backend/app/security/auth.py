@@ -11,11 +11,29 @@ Properties this module must preserve:
 
 Roles
 -----
-viewer    read registry, gate dry-runs, audit trail
-engineer  register model identity, archive non-production rows
-pipeline  attest metrics / domain validation / artifact hash (signed payload)
-approver  promote, rollback, archive a PRODUCTION row
-admin     activate a promoted model into the runtime deployment manifest
+viewer          read registry, gate dry-runs, audit trail
+engineer        register model identity, archive non-production rows
+pipeline        attest metrics / domain validation / artifact hash (signed
+                payload); also the internal service identity for telemetry
+approver        promote, rollback, archive a PRODUCTION row
+admin           activate a promoted model into the runtime deployment
+                manifest; acts as superuser for every business endpoint
+operator        production-line operator: create inspections, read
+                inspections / images / products / realtime status
+reviewer        human review: claim / resolve / correct review tasks, review
+                metrics, training-candidate export
+release-manager quality-rule configuration and model release approvals
+
+Separation of duties (business endpoints)
+-----------------------------------------
+- Every business mutation requires a bearer token. There is no anonymous
+  write path.
+- The human-review identity is derived from the authenticated principal's
+  subject; a client-supplied `reviewer` string that does not match it is
+  rejected (403), so a reviewer cannot be impersonated through the body.
+- Telemetry ingestion requires the pipeline role (internal service identity)
+  plus admin; an operator token cannot spoof pipeline counters.
+- Read-only business endpoints accept any authenticated principal.
 """
 
 from __future__ import annotations
@@ -39,8 +57,21 @@ ROLE_ENGINEER = "engineer"
 ROLE_PIPELINE = "pipeline"
 ROLE_APPROVER = "approver"
 ROLE_ADMIN = "admin"
+# business roles (separation of duties for the shop-floor endpoints)
+ROLE_OPERATOR = "operator"
+ROLE_REVIEWER = "reviewer"
+ROLE_RELEASE_MANAGER = "release-manager"
 
-ALL_ROLES = (ROLE_VIEWER, ROLE_ENGINEER, ROLE_PIPELINE, ROLE_APPROVER, ROLE_ADMIN)
+ALL_ROLES = (
+    ROLE_VIEWER,
+    ROLE_ENGINEER,
+    ROLE_PIPELINE,
+    ROLE_APPROVER,
+    ROLE_ADMIN,
+    ROLE_OPERATOR,
+    ROLE_REVIEWER,
+    ROLE_RELEASE_MANAGER,
+)
 
 
 @dataclass(frozen=True)
@@ -164,3 +195,10 @@ def require_roles(*roles: str):
 
 def request_id(request: Request) -> str:
     return request.headers.get("X-Request-ID", "unknown")
+
+
+def require_any_authenticated():
+    """FastAPI dependency: any valid bearer token (no role required beyond
+    authentication). Used by read-only business endpoints where every
+    authenticated operator / reviewer / viewer may look."""
+    return require_roles(*ALL_ROLES)
