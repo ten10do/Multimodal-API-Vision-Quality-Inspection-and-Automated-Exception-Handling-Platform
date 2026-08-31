@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
 from vision_contract import VisionResult
 
 from .d3_candidate_predictor import D3CandidatePredictor
@@ -183,11 +184,21 @@ def create_app() -> FastAPI:
         }
 
     @app.get("/ready")
-    async def ready() -> dict:
+    async def ready():
+        """Liveness-and-readiness probe for load balancers and waiters.
+
+        A not-ready instance MUST NOT answer 200: load balancers and E2E wait
+        functions key off the status code alone and would route traffic to an
+        instance that has not loaded its models. 503 is the honest answer
+        until the pinned stack is verified and both models are loadable.
+        """
         problems = verify_deployment()
         if problems:
-            return {"status": "not_ready", "model_loaded": _predictor is not None,
-                    "anomaly_loaded": _anomaly is not None, "problems": problems}
+            return JSONResponse(
+                status_code=503,
+                content={"status": "not_ready", "model_loaded": _predictor is not None,
+                         "anomaly_loaded": _anomaly is not None, "problems": problems},
+            )
         return {"status": "ready", "model_loaded": True, "anomaly_loaded": True, "deployment_version": _deployment_version()}
 
     @app.post("/v1/infer", response_model=VisionResult)
